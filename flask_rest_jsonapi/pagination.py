@@ -29,7 +29,7 @@ def add_pagination_links(data, object_count, querystring, base_url):
 
     if querystring.pagination.get('size') != '0' and object_count > 1:
         # compute last link
-        page_size = int(querystring.pagination.get('size', 0)) or current_app.config['PAGE_SIZE']
+        page_size = int(querystring.pagination.get('size', 1)) or current_app.config['PAGE_SIZE']
         last_page = int(ceil(object_count / page_size))
 
         if last_page > 1:

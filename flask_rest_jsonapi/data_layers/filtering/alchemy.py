@@ -16,10 +16,14 @@ def create_filters(model, filter_info, resource):
     :param Resource resource: the resource
     """
     filters = []
+    joins = []
     for filter_ in filter_info:
-        filters.append(Node(model, filter_, resource, resource.schema).resolve())
+        # filters.append(Node(model, filter_, resource, resource.schema).resolve())
+        filter, join = Node(model, filter_, resource, resource.schema).resolve()
+        filters.append(filter)
+        joins.extend(join)
 
-    return filters
+    return filters, joins
 
 
 class Node(object):
@@ -38,21 +42,55 @@ class Node(object):
         self.resource = resource
         self.schema = schema
 
+    def create_filter(self, marshmallow_field, model_column, operator, value):
+        """
+        Create sqlalchemy filter
+        :param marshmallow_field:
+        :param model_column: column sqlalchemy
+        :param operator:
+        :param value:
+        :return:
+        """
+        if hasattr(marshmallow_field, f'_{operator}_sql_filter_'):
+            """
+            У marshmallow field может быть реализована своя логика создания фильтра для sqlalchemy
+            для определённого оператора. Чтобы реализовать свою логику создания фильтра для определённого оператора
+            необходимо реализовать в классе поля методы (название метода строится по следующему принципу
+            `_<тип оператора>_sql_filter_`). Также такой метод должен принимать ряд параметров 
+            * marshmallow_field - объект класса поля marshmallow
+            * model_column - объект класса поля sqlalchemy
+            * value - значения для фильтра
+            * operator - сам оператор, например: "eq", "in"...
+            """
+            return getattr(marshmallow_field, f'_{operator}_sql_filter_')(
+                marshmallow_field=marshmallow_field,
+                model_column=model_column,
+                value=value,
+                operator=self.operator
+            )
+        # Нужно проводить валидацию и делать десериализацию значение указанных в фильтре, так как поля Enum
+        # например выгружаются как 'name_value(str)', а в БД хранится как просто число
+        value = marshmallow_field.deserialize(value)
+        return getattr(model_column, self.operator)(value)
+
     def resolve(self):
         """Create filter for a particular node of the filter tree"""
         if 'or' not in self.filter_ and 'and' not in self.filter_ and 'not' not in self.filter_:
             value = self.value
 
-            if isinstance(value, dict):
-                value = Node(self.related_model, value, self.resource, self.related_schema).resolve()
-
             if '__' in self.filter_.get('name', ''):
-                value = {self.filter_['name'].split('__')[1]: value}
+                value = {'name': '__'.join(self.filter_['name'].split('__')[1:]), 'op': self.filter_['op'],'val': value}
+                joins = [self.column]
+                filters, new_joins = Node(self.related_model, value, self.resource, self.related_schema).resolve()
+                joins.extend(new_joins)
+                return filters, joins
 
-            if isinstance(value, dict):
-                return getattr(self.column, self.operator)(**value)
-            else:
-                return getattr(self.column, self.operator)(value)
+            return self.create_filter(
+                marshmallow_field=self.schema._declared_fields[self.name],
+                model_column=self.column,
+                operator=self.filter_['op'],
+                value=value
+            ), []
 
         if 'or' in self.filter_:
             return or_(Node(self.model, filt, self.resource, self.schema).resolve() for filt in self.filter_['or'])

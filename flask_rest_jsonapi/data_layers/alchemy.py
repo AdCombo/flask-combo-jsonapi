@@ -497,7 +497,9 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :return Query: the sorted query
         """
         if filter_info:
-            filters = create_filters(model, filter_info, self.resource)
+            filters, joins = create_filters(model, filter_info, self.resource)
+            for i_join in joins:
+                query = query.join(i_join)
             query = query.filter(*filters)
 
         return query

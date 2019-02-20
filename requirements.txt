@@ -1,5 +1,5 @@
 six
 Flask>=0.11
-marshmallow==2.18.0
+marshmallow>=3
 marshmallow_jsonapi
 sqlalchemy
