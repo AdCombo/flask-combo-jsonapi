@@ -6,8 +6,8 @@ import flask
 from flask import current_app
 import apispec
 
+from flask_rest_jsonapi.ext.spec import APISPEC_VERSION_MAJOR
 from .plugins import FlaskPlugin
-from flask_rest_jsonapi.compat import APISPEC_VERSION_MAJOR
 if APISPEC_VERSION_MAJOR == 0:
     from .plugins import MarshmallowPlugin
 else:

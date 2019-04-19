@@ -155,7 +155,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
                 setattr(obj, key, value)
 
         self.apply_relationships(data, obj)
-        self.apply_nested_fields(data, obj)
+        # self.apply_nested_fields(data, obj)
 
         try:
             self.session.commit()
@@ -449,7 +449,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
                     related_object = None
 
                     if value is not None:
-                        related_object = self.get_related_object(related_model, related_id_field, {'id': value})
+                        related_object = self.get_related_object(related_model, related_id_field, {'id': value['id']})
 
                     relationships_to_apply.append({'field': key, 'value': related_object})
 
@@ -499,7 +499,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
         if filter_info:
             filters, joins = create_filters(model, filter_info, self.resource)
             for i_join in joins:
-                query = query.join(i_join)
+                query = query.join(*i_join)
             query = query.filter(*filters)
 
         return query

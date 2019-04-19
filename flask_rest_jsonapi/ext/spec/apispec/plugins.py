@@ -10,7 +10,8 @@ import werkzeug.routing
 from apispec import BasePlugin
 from apispec.exceptions import PluginMethodNotImplementedError
 
-from flask_rest_jsonapi.compat import APISPEC_VERSION_MAJOR
+from flask_rest_jsonapi.ext.spec import APISPEC_VERSION_MAJOR
+
 if APISPEC_VERSION_MAJOR == 0:
     from apispec import Path
     from apispec.ext import marshmallow as aem

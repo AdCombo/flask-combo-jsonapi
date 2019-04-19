@@ -1,11 +1,39 @@
 # -*- coding: utf-8 -*-
 
 """Helper to create sqlalchemy filters according to filter querystring parameter"""
-
-from sqlalchemy import and_, or_, not_
+from marshmallow import fields
+from sqlalchemy import and_, or_, not_, sql
+from sqlalchemy.orm import aliased, util, attributes
+from typing import Any, List, Tuple
 
 from flask_rest_jsonapi.exceptions import InvalidFilters
 from flask_rest_jsonapi.schema import get_relationships, get_model_field
+
+Filter = sql.elements.BinaryExpression
+Join = List[Any]
+
+FilterAndJoins = Tuple[
+    Filter,
+    List[Join]
+]
+
+# Список полей, которые немогут быть массивом
+STANDARD_MARSHMALLOW_FIELDS = {fields.Dict, fields.Tuple, fields.String, fields.UUID, fields.Number, fields.Integer,
+                               fields.Decimal, fields.Boolean, fields.Float, fields.DateTime, fields.LocalDateTime,
+                               fields.Date, fields.TimeDelta, fields.Url, fields.Str, fields.Bool, fields.Int,
+                               fields.Constant}
+
+
+def deserialize_field(marshmallow_field: fields.Field, value: Any) -> Any:
+    """
+    Десериализуем значение, которое приходит в фильтре
+    :param marshmallow_field: тип marshmallow поля
+    :param value: значение, которое прищло для фильтра
+    :return: сериализованное значение
+    """
+    if isinstance(value, list) and type(marshmallow_field) in STANDARD_MARSHMALLOW_FIELDS:
+        return [marshmallow_field.deserialize(i_value) for i_value in value]
+    return marshmallow_field.deserialize(value)
 
 
 def create_filters(model, filter_info, resource):
@@ -70,18 +98,20 @@ class Node(object):
             )
         # Нужно проводить валидацию и делать десериализацию значение указанных в фильтре, так как поля Enum
         # например выгружаются как 'name_value(str)', а в БД хранится как просто число
-        value = marshmallow_field.deserialize(value)
+        value = deserialize_field(marshmallow_field, value)
         return getattr(model_column, self.operator)(value)
 
-    def resolve(self):
+    def resolve(self) -> FilterAndJoins:
         """Create filter for a particular node of the filter tree"""
         if 'or' not in self.filter_ and 'and' not in self.filter_ and 'not' not in self.filter_:
             value = self.value
 
             if '__' in self.filter_.get('name', ''):
                 value = {'name': '__'.join(self.filter_['name'].split('__')[1:]), 'op': self.filter_['op'],'val': value}
-                joins = [self.column]
-                filters, new_joins = Node(self.related_model, value, self.resource, self.related_schema).resolve()
+                alias = aliased(self.related_model)
+                joins = [[alias, self.column]]
+                node = Node(alias, value, self.resource, self.related_schema)
+                filters, new_joins = node.resolve()
                 joins.extend(new_joins)
                 return filters, joins
 
@@ -93,11 +123,25 @@ class Node(object):
             ), []
 
         if 'or' in self.filter_:
-            return or_(Node(self.model, filt, self.resource, self.schema).resolve() for filt in self.filter_['or'])
+            return self._create_filters(type_filter='or')
         if 'and' in self.filter_:
-            return and_(Node(self.model, filt, self.resource, self.schema).resolve() for filt in self.filter_['and'])
+            return self._create_filters(type_filter='and')
         if 'not' in self.filter_:
-            return not_(Node(self.model, self.filter_['not'], self.resource, self.schema).resolve())
+            filter, joins = Node(self.model, self.filter_['not'], self.resource, self.schema).resolve()
+            return not_(filter), joins
+
+    def _create_filters(self, type_filter: str) -> FilterAndJoins:
+        """
+        Создаём  фильтр or или and
+        :param type_filter: 'or' или 'and'
+        :return:
+        """
+        nodes = [Node(self.model, filter, self.resource, self.schema).resolve() for filter in self.filter_[type_filter]]
+        joins = []
+        for i_node in nodes:
+            joins.extend(i_node[1])
+        op = and_ if type_filter == 'and' else or_
+        return op(*[i_node[0] for i_node in nodes]), joins
 
     @property
     def name(self):
