@@ -1,11 +1,12 @@
 from copy import deepcopy
 
 from apispec import APISpec
-from apispec.ext.marshmallow import MarshmallowPlugin
-from typing import Dict, Any, Set, List, Union
+from apispec.ext.marshmallow import MarshmallowPlugin, resolver
+from typing import Dict, Any, Set, List, Union, Tuple
 
 from flask_rest_jsonapi import Api
 from flask_rest_jsonapi.ext.spec.compat import APISPEC_VERSION_MAJOR
+from flask_rest_jsonapi.ext.spec.plugins_for_apispec import RestfulPlugin
 from flask_rest_jsonapi.resource import ResourceList, ResourceDetail
 from marshmallow import fields, Schema
 
@@ -53,7 +54,7 @@ class ApiSpecPlugin(BasePlugin, DocBlueprintMixin):
             app.name,
             app.config.get('API_VERSION', '1'),
             openapi_version=openapi_version,
-            plugins=[MarshmallowPlugin()],
+            plugins=[MarshmallowPlugin(), RestfulPlugin()],
             **self.spec_kwargs,
         )
 
@@ -80,9 +81,9 @@ class ApiSpecPlugin(BasePlugin, DocBlueprintMixin):
         self._register_doc_blueprint()
 
     def after_route(self,
-                    resource: Union[ResourceList, ResourceDetail],
-                    view,
-                    *urls: str,
+                    resource: Union[ResourceList, ResourceDetail] = None,
+                    view=None,
+                    urls: Tuple[str] = None,
                     self_json_api: Api = None,
                     tag: str = None,
                     default_parameters=None,
@@ -116,18 +117,20 @@ class ApiSpecPlugin(BasePlugin, DocBlueprintMixin):
         elif tag:
             tag_name = self.spec_tag[tag]['name']
 
+        urls = urls if urls else tuple()
         for i_url in urls:
             self._add_paths_in_spec(
                 path=i_url,
                 resource=resource,
                 default_parameters=default_parameters,
                 default_schema=default_schema,
-                tag_name=tag_name
+                tag_name=tag_name,
+                **kwargs
             )
 
     def _add_paths_in_spec(self, path: str = '', resource: Any = None, tag_name: str = '',
                            default_parameters: List = None,
-                           default_schema: Schema = None) -> None:
+                           default_schema: Schema = None, **kwargs) -> None:
         operations = {}
         methods: Set[str] = {i_method.lower() for i_method in resource.methods}
         operations_all: Dict[str, Any] = {
@@ -136,6 +139,14 @@ class ApiSpecPlugin(BasePlugin, DocBlueprintMixin):
                 'application/json'
             ],
             'parameters': default_parameters if default_parameters else []
+        }
+
+        parameter_id = {
+            "in": "path",
+            "name": "id",
+            "required": True,
+            "type": "integer",
+            "format": "int32"
         }
 
         schema = default_schema if default_schema else {
@@ -151,7 +162,7 @@ class ApiSpecPlugin(BasePlugin, DocBlueprintMixin):
                             'type': 'string'
                         },
                         'attributes': {
-                            '$ref': f'#/definitions/{resource.schema.__name__}'
+                            '$ref': f'#/definitions/{resolver(resource.schema)}'
                         },
                         'relationships': {
                             'type': 'object'
@@ -170,6 +181,9 @@ class ApiSpecPlugin(BasePlugin, DocBlueprintMixin):
                 '200': {'description': 'Success'},
                 '404': {'description': 'Not Found'},
             }
+            # Если выгружаем объект
+            if issubclass(resource, ResourceDetail):
+                operations['get']['parameters'].append(deepcopy(parameter_id))
             operations['get']['parameters'].append({
                 'default': ','.join([
                     i_field_name
@@ -251,6 +265,7 @@ class ApiSpecPlugin(BasePlugin, DocBlueprintMixin):
                 '404': {'description': 'Not Found'},
                 '409': {'description': 'Conflict'}
             }
+            operations['patch']['parameters'].append(deepcopy(parameter_id))
             operations['patch']['parameters'].append({
                 'name': 'POST body',
                 'in': 'body',
@@ -260,6 +275,7 @@ class ApiSpecPlugin(BasePlugin, DocBlueprintMixin):
             })
         if 'delete' in methods:
             operations['delete'] = deepcopy(operations_all)
+            operations['delete']['parameters'].append(deepcopy(parameter_id))
             operations['delete']['responses'] = {
                 '200': {'description': 'Success'},
                 '202': {'description': 'Accepted'},
@@ -273,9 +289,9 @@ class ApiSpecPlugin(BasePlugin, DocBlueprintMixin):
                 rule = i_rule
                 break
         if APISPEC_VERSION_MAJOR < 1:
-            self.spec.add_path(path=path, operations=operations, rule=rule)
+            self.spec.add_path(path=path, operations=operations, rule=rule, resource=resource, **kwargs)
         else:
-            self.spec.path(path=path, operations=operations, rule=rule)
+            self.spec.path(path=path, operations=operations, rule=rule, resource=resource, **kwargs)
 
     def _add_definitions_in_spec(self, schema) -> None:
         """
@@ -283,7 +299,7 @@ class ApiSpecPlugin(BasePlugin, DocBlueprintMixin):
         :param schema: schema marshmallow
         :return:
         """
-        name_schema = schema.__name__
+        name_schema = resolver(schema)
         if name_schema not in self.spec_schemas and name_schema not in self.spec.components._schemas:
             self.spec_schemas[name_schema] = schema
             if APISPEC_VERSION_MAJOR < 1:

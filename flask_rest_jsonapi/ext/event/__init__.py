@@ -14,7 +14,7 @@ class EventSchema(Schema):
 class EventPlugin(BasePlugin):
     """Плагин для создания роутеров на события в json_api"""
 
-    def before_route(self, resource, view, *urls, self_json_api=None, **kwargs):
+    def before_route(self, resource=None, view=None, urls=None, self_json_api=None, **kwargs):
 
         if hasattr(resource, 'events'):
             # Создание роутеров для событий (events)
@@ -29,7 +29,8 @@ class EventPlugin(BasePlugin):
 
                 i_resource = type(i_event.__name__, (resource,), {
                     'methods': ['POST'],
-                    'schema': EventSchema
+                    'schema': EventSchema,
+                    'post': i_event
                 })
                 i_view = f'{view}_{i_event.__name__}'
 
@@ -55,11 +56,11 @@ class EventPlugin(BasePlugin):
 
                 for i_plugins in self_json_api.plugins:
                     try:
-                        i_plugins.after_route(i_resource,
-                                              view,
-                                              *i_urls,
+                        i_plugins.after_route(view=view,
+                                              urls=tuple(i_urls),
                                               self_json_api=self,
                                               default_schema=i_parameters_schema,
+                                              resource=i_resource,
                                               **kwargs)
                     except PluginMethodNotImplementedError:
                         pass

@@ -87,7 +87,7 @@ class Api(object):
         """
         for i_plugins in self.plugins:
             try:
-                i_plugins.before_route(resource, view, *urls, self_json_api=self, **kwargs)
+                i_plugins.before_route(resource=resource, view=view, urls=urls, self_json_api=self, **kwargs)
             except PluginMethodNotImplementedError:
                 pass
 
@@ -117,7 +117,7 @@ class Api(object):
 
         for i_plugins in self.plugins:
             try:
-                i_plugins.after_route(resource, view, *urls, self_json_api=self, **kwargs)
+                i_plugins.after_route(resource=resource, view=view, urls=urls, self_json_api=self, **kwargs)
             except PluginMethodNotImplementedError:
                 pass
 

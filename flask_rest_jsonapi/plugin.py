@@ -1,5 +1,5 @@
 """Base class for Plugin classes."""
-from typing import Union, List
+from typing import Union, List, Tuple
 
 from flask_rest_jsonapi import Api
 from flask_rest_jsonapi.exceptions import PluginMethodNotImplementedError
@@ -17,9 +17,9 @@ class BasePlugin(object):
         raise PluginMethodNotImplementedError
 
     def before_route(self,
-                     resource: Union[ResourceList, ResourceDetail],
-                     view,
-                     *urls: List[str],
+                     resource: Union[ResourceList, ResourceDetail] = None,
+                     view=None,
+                     urls: Tuple[str] = None,
                      self_json_api: Api = None,
                      **kwargs) -> None:
         """
@@ -34,9 +34,9 @@ class BasePlugin(object):
         raise PluginMethodNotImplementedError
 
     def after_route(self,
-                    resource: Union[ResourceList, ResourceDetail],
-                    view,
-                    *urls: str,
+                    resource: Union[ResourceList, ResourceDetail] = None,
+                    view=None,
+                    urls: Tuple[str] = None,
                     self_json_api: Api = None,
                     **kwargs) -> None:
         """
