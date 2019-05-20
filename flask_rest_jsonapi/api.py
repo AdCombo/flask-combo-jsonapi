@@ -9,17 +9,9 @@ from functools import wraps
 
 from flask import request, abort
 
-from typing import Dict, Any, Set
-
-from marshmallow import Schema, fields
-
-from flask_rest_jsonapi.marshmallow_fields import Relationship
-from flask_rest_jsonapi.spec import APISpec, DocBlueprintMixin
-from flask_rest_jsonapi.compat import APISPEC_VERSION_MAJOR
-
+from flask_rest_jsonapi.decorators import jsonapi_exception_formatter
 from flask_rest_jsonapi.exceptions import PluginMethodNotImplementedError
 from flask_rest_jsonapi.resource import ResourceList, ResourceRelationship
-from flask_rest_jsonapi.decorators import jsonapi_exception_formatter
 
 
 class Api(object):
@@ -90,6 +82,7 @@ class Api(object):
                 i_plugins.before_route(resource=resource, view=view, urls=urls, self_json_api=self, **kwargs)
             except PluginMethodNotImplementedError:
                 pass
+        setattr(resource, 'plugins', self.plugins)
 
         resource.view = view
         url_rule_options = kwargs.get('url_rule_options') or dict()

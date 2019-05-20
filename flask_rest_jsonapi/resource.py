@@ -15,7 +15,7 @@ from marshmallow import ValidationError
 
 from flask_rest_jsonapi.querystring import QueryStringManager as QSManager
 from flask_rest_jsonapi.pagination import add_pagination_links
-from flask_rest_jsonapi.exceptions import InvalidType, BadRequest, RelationNotFound
+from flask_rest_jsonapi.exceptions import InvalidType, BadRequest, RelationNotFound, PluginMethodNotImplementedError
 from flask_rest_jsonapi.decorators import check_headers, check_method_requirements, jsonapi_exception_formatter
 from flask_rest_jsonapi.schema import compute_schema, get_relationships, get_model_field
 from flask_rest_jsonapi.data_layers.base import BaseDataLayer
@@ -128,6 +128,13 @@ class ResourceList(with_metaclass(ResourceMeta, Resource)):
                                 qs,
                                 qs.include)
 
+        for i_plugins in self.plugins:
+            try:
+                i_plugins.after_init_schema_in_resource_list_get(*args, schema=schema, model=self.data_layer['model'],
+                                                                 **kwargs)
+            except PluginMethodNotImplementedError:
+                pass
+
         result = schema.dump(objects)
 
         view_kwargs = request.view_args if getattr(self, 'view_kwargs', None) is True else dict()
@@ -153,6 +160,13 @@ class ResourceList(with_metaclass(ResourceMeta, Resource)):
                                 getattr(self, 'post_schema_kwargs', dict()),
                                 qs,
                                 qs.include)
+
+        for i_plugins in self.plugins:
+            try:
+                i_plugins.after_init_schema_in_resource_list_post(*args, schema=schema, model=self.data_layer['model'],
+                                                                  **kwargs)
+            except PluginMethodNotImplementedError:
+                pass
 
         try:
             data = schema.load(json_data)
@@ -229,6 +243,13 @@ class ResourceDetail(with_metaclass(ResourceMeta, Resource)):
                                 qs,
                                 qs.include)
 
+        for i_plugins in self.plugins:
+            try:
+                i_plugins.after_init_schema_in_resource_detail_get(*args, schema=schema, model=self.data_layer['model'],
+                                                                   **kwargs)
+            except PluginMethodNotImplementedError:
+                pass
+
         result = schema.dump(obj)
 
         final_result = self.after_get(result)
@@ -250,6 +271,13 @@ class ResourceDetail(with_metaclass(ResourceMeta, Resource)):
                                 schema_kwargs,
                                 qs,
                                 qs.include)
+
+        for i_plugins in self.plugins:
+            try:
+                i_plugins.after_init_schema_in_resource_detail_patch(*args, schema=schema, model=self.data_layer['model'],
+                                                                     **kwargs)
+            except PluginMethodNotImplementedError:
+                pass
 
         try:
             data = schema.load(json_data)

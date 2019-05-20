@@ -58,7 +58,7 @@ class EventPlugin(BasePlugin):
                     try:
                         i_plugins.after_route(view=view,
                                               urls=tuple(i_urls),
-                                              self_json_api=self,
+                                              self_json_api=self_json_api,
                                               default_schema=i_parameters_schema,
                                               resource=i_resource,
                                               **kwargs)

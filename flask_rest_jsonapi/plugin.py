@@ -49,3 +49,47 @@ class BasePlugin(object):
         :return:
         """
         raise PluginMethodNotImplementedError
+
+    def after_init_schema_in_resource_list_post(self, *args, schema=None, model=None, **kwargs):
+        """
+        Выполняется после иницциализация marshmallow схемы в ResourceList.post
+        :param args:
+        :param schema:
+        :param model:
+        :param kwargs:
+        :return:
+        """
+        raise PluginMethodNotImplementedError
+
+    def after_init_schema_in_resource_list_get(self, *args, schema=None, model=None, **kwargs):
+        """
+        Выполняется после иницциализация marshmallow схемы в ResourceList.get
+        :param args:
+        :param schema:
+        :param model:
+        :param kwargs:
+        :return:
+        """
+        raise PluginMethodNotImplementedError
+
+    def after_init_schema_in_resource_detail_get(self, *args, schema=None, model=None, **kwargs):
+        """
+        Выполняется после иницциализация marshmallow схемы в ResourceDetail.get
+        :param args:
+        :param schema:
+        :param model:
+        :param kwargs:
+        :return:
+        """
+        raise PluginMethodNotImplementedError
+
+    def after_init_schema_in_resource_detail_patch(self, *args, schema=None, model=None, **kwargs):
+        """
+        Выполняется после иницциализация marshmallow схемы в ResourceDetail.patch
+        :param args:
+        :param schema:
+        :param model:
+        :param kwargs:
+        :return:
+        """
+        raise PluginMethodNotImplementedError
