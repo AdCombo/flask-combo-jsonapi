@@ -21,15 +21,9 @@ class EventPlugin(BasePlugin):
             cls_events = getattr(resource, 'events', object)
             events = [getattr(cls_events, i_event) for i_event in dir(cls_events) if i_event.startswith('event_')]
             for i_event in events:
-                schema_name_with_parameters = f'{resource.__name__}_{i_event.__name__}'
-                i_parameters_schema = type(schema_name_with_parameters, (Schema,), {
-                    'parameter': fields.Integer()
-                })
-                register(schema_name_with_parameters, i_parameters_schema)
-
                 i_resource = type(i_event.__name__, (resource,), {
                     'methods': ['POST'],
-                    'schema': EventSchema,
+                    'schema': None,
                     'post': i_event
                 })
                 i_view = f'{view}_{i_event.__name__}'
@@ -59,7 +53,7 @@ class EventPlugin(BasePlugin):
                         i_plugins.after_route(view=view,
                                               urls=tuple(i_urls),
                                               self_json_api=self_json_api,
-                                              default_schema=i_parameters_schema,
+                                              default_schema=None,
                                               resource=i_resource,
                                               **kwargs)
                     except PluginMethodNotImplementedError:

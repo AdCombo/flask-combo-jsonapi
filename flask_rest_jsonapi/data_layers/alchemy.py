@@ -12,8 +12,8 @@ from marshmallow.base import SchemaABC
 
 from flask import current_app
 from flask_rest_jsonapi.data_layers.base import BaseDataLayer
-from flask_rest_jsonapi.exceptions import RelationNotFound, RelatedObjectNotFound, JsonApiException,\
-    InvalidSort, ObjectNotFound, InvalidInclude, InvalidType
+from flask_rest_jsonapi.exceptions import RelationNotFound, RelatedObjectNotFound, JsonApiException, \
+    InvalidSort, ObjectNotFound, InvalidInclude, InvalidType, PluginMethodNotImplementedError
 from flask_rest_jsonapi.data_layers.filtering.alchemy import create_filters
 from flask_rest_jsonapi.schema import get_model_field, get_related_schema, get_relationships, get_nested_fields, get_schema_field
 
@@ -42,6 +42,12 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :param dict view_kwargs: kwargs from the resource view
         :return DeclarativeMeta: an object from sqlalchemy
         """
+        for i_plugins in self.resource.plugins:
+            try:
+                i_plugins.data_layer_before_create_object(data=data, view_kwargs=view_kwargs, self_json_api=self)
+            except PluginMethodNotImplementedError:
+                pass
+
         self.before_create_object(data, view_kwargs)
 
         relationship_fields = get_relationships(self.resource.schema, model_field=True)
@@ -49,10 +55,22 @@ class SqlalchemyDataLayer(BaseDataLayer):
 
         join_fields = relationship_fields + nested_fields
 
+        for i_plugins in self.resource.plugins:
+            try:
+                data = i_plugins.data_layer_create_object_clean_data(data=data, view_kwargs=view_kwargs,
+                                                                     join_fields=join_fields, self_json_api=self)
+            except PluginMethodNotImplementedError:
+                pass
         obj = self.model(**{key: value
                             for (key, value) in data.items() if key not in join_fields})
         self.apply_relationships(data, obj)
         self.apply_nested_fields(data, obj)
+
+        for i_plugins in self.resource.plugins:
+            try:
+                i_plugins.data_layer_after_create_object(data=data, view_kwargs=view_kwargs, obj=obj, self_json_api=self)
+            except PluginMethodNotImplementedError:
+                pass
 
         self.session.add(obj)
         try:
@@ -74,6 +92,9 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :params dict view_kwargs: kwargs from the resource view
         :return DeclarativeMeta: an object from sqlalchemy
         """
+        # Нужно выталкивать из sqlalchemy Закешированные запросы, иначе не удастся загрузить данные о current_user
+        self.session.expire_all()
+
         self.before_get_object(view_kwargs)
 
         id_field = getattr(self, 'id_field', inspect(self.model).primary_key[0].key)
@@ -86,6 +107,14 @@ class SqlalchemyDataLayer(BaseDataLayer):
         filter_value = view_kwargs[url_field]
 
         query = self.retrieve_object_query(view_kwargs, filter_field, filter_value)
+
+        for i_plugins in self.resource.plugins:
+            try:
+                query = i_plugins.data_layer_get_object_update_query(query=query, qs=qs,
+                                                                     view_kwargs=view_kwargs,
+                                                                     self_json_api=self)
+            except PluginMethodNotImplementedError:
+                pass
 
         if qs is not None:
             query = self.eagerload_includes(query, qs)
@@ -106,9 +135,20 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :param dict view_kwargs: kwargs from the resource view
         :return tuple: the number of object and the list of objects
         """
+        # Нужно выталкивать из sqlalchemy Закешированные запросы, иначе не удастся загрузить данные о current_user
+        self.session.expire_all()
+
         self.before_get_collection(qs, view_kwargs)
 
         query = self.query(view_kwargs)
+
+        for i_plugins in self.resource.plugins:
+            try:
+                query = i_plugins.data_layer_get_collection_update_query(query=query, qs=qs,
+                                                                         view_kwargs=view_kwargs,
+                                                                         self_json_api=self)
+            except PluginMethodNotImplementedError:
+                pass
 
         if qs.filters:
             query = self.filter_query(query, qs.filters, self.model)
@@ -150,6 +190,13 @@ class SqlalchemyDataLayer(BaseDataLayer):
 
         join_fields = relationship_fields + nested_fields
 
+        for i_plugins in self.resource.plugins:
+            try:
+                data = i_plugins.data_layer_update_object_clean_data(data=data, obj=obj, view_kwargs=view_kwargs,
+                                                                     join_fields=join_fields, self_json_api=self)
+            except PluginMethodNotImplementedError:
+                pass
+
         for key, value in data.items():
             if hasattr(obj, key) and key not in join_fields:
                 setattr(obj, key, value)
@@ -164,6 +211,10 @@ class SqlalchemyDataLayer(BaseDataLayer):
             raise e
         except Exception as e:
             self.session.rollback()
+            orig_e = getattr(e, 'orig', object)
+            message = getattr(orig_e, 'args', [])
+            message = message[0] if message else None
+            e = message if message else e
             raise JsonApiException("Update object error: " + str(e), source={'pointer': '/data'})
 
         self.after_update_object(obj, data, view_kwargs)
@@ -181,6 +232,12 @@ class SqlalchemyDataLayer(BaseDataLayer):
                                  source={'parameter': url_field})
 
         self.before_delete_object(obj, view_kwargs)
+
+        for i_plugins in self.resource.plugins:
+            try:
+                i_plugins.data_layer_delete_object_clean_data(obj=obj, view_kwargs=view_kwargs, self_json_api=self)
+            except PluginMethodNotImplementedError:
+                pass
 
         self.session.delete(obj)
         try:
@@ -420,7 +477,6 @@ class SqlalchemyDataLayer(BaseDataLayer):
                                                                      obj['id']))
 
         return related_object
-
 
     def apply_relationships(self, data, obj):
         """Apply relationship provided by data to obj

@@ -106,7 +106,8 @@ class ApiSpecPlugin(BasePlugin, DocBlueprintMixin):
         # Add tag relative to this resource to the global tag list
 
         # We add definitions (models) to the apiscpec
-        self._add_definitions_in_spec(resource.schema)
+        if resource.schema:
+            self._add_definitions_in_spec(resource.schema)
 
         # We add tags to the apiscpec
         tag_name = view.title()
@@ -148,7 +149,11 @@ class ApiSpecPlugin(BasePlugin, DocBlueprintMixin):
             "type": "integer",
             "format": "int32"
         }
-
+        attributes = {}
+        if resource.schema:
+            attributes = {
+                '$ref': f'#/definitions/{resolver(resource.schema)}'
+            }
         schema = default_schema if default_schema else {
             'type': 'object',
             'properties': {
@@ -161,9 +166,7 @@ class ApiSpecPlugin(BasePlugin, DocBlueprintMixin):
                         'id': {
                             'type': 'string'
                         },
-                        'attributes': {
-                            '$ref': f'#/definitions/{resolver(resource.schema)}'
-                        },
+                        'attributes': attributes,
                         'relationships': {
                             'type': 'object'
                         }
@@ -184,18 +187,52 @@ class ApiSpecPlugin(BasePlugin, DocBlueprintMixin):
             # Если выгружаем объект
             if issubclass(resource, ResourceDetail):
                 operations['get']['parameters'].append(deepcopy(parameter_id))
-            operations['get']['parameters'].append({
-                'default': ','.join([
+            models_for_include = ','.join([
                     i_field_name
                     for i_field_name, i_field in resource.schema._declared_fields.items()
                     if isinstance(i_field, Relationship)
-                ]),
+                ])
+            operations['get']['parameters'].append({
+                'default': models_for_include,
                 'name': 'include',
                 'in': 'query',
                 'format': 'string',
                 'required': False,
-                'description': 'Related relationships to include'
+                'description': f'Related relationships to include. For example: {models_for_include}'
             })
+
+            # Sparse Fieldsets
+            description = 'List that refers to the name(s) of the fields to be returned "%s"'
+            new_parameter = {
+                'name': f'fields[{resource.schema.Meta.type_}]',
+                'in': 'query',
+                'type': 'array',
+                'required': False,
+                'description': description.format(resource.schema.Meta.type_),
+                'items': {
+                    'type': 'string',
+                    'enum': list(resource.schema._declared_fields.keys())
+                }
+            }
+            operations['get']['parameters'].append(new_parameter)
+            type_schemas = {resource.schema.Meta.type_}
+            for i_field_name, i_field in resource.schema._declared_fields.items():
+                if isinstance(i_field, Relationship) and i_field.schema.Meta.type_ not in type_schemas:
+                    new_parameter = {
+                        'name': f'fields[{i_field.schema.Meta.type_}]',
+                        'in': 'query',
+                        'type': 'array',
+                        'required': False,
+                        'description': description.format(i_field.schema.Meta.type_),
+                        'items': {
+                            'type': 'string',
+                            'enum': list(self.spec.components._schemas[resolver(type(i_field.schema))]['properties'].keys())
+                        }
+                    }
+                    operations['get']['parameters'].append(new_parameter)
+                    type_schemas.add(i_field.schema.Meta.type_)
+
+            # Filter
             if not (methods - {'get', 'post'}):
                 # List data
                 operations['get']['parameters'].append({
@@ -230,15 +267,52 @@ class ApiSpecPlugin(BasePlugin, DocBlueprintMixin):
                 })
                 # Add filters for fields
                 for i_field_name, i_field in resource.schema._declared_fields.items():
+                    i_field_spec = self.spec.components._schemas[resolver(resource.schema)]['properties'][i_field_name]
                     if not isinstance(i_field, fields.Nested):
-                        operations['get']['parameters'].append({
-                            'type': 'string',
+                        if i_field_spec.get('type') == 'object':
+                            # Пропускаем создание фильтров для dict. Просто не понятно как фильтровать по таким
+                            # полям
+                            continue
+                        new_parameter = {
                             'name': f'filter[{i_field_name}]',
                             'in': 'query',
-                            'format': 'string',
+                            'type': i_field_spec.get('type'),
                             'required': False,
                             'description': f'{i_field_name} attribute filter'
-                        })
+                        }
+                        if 'items' in i_field_spec:
+                            new_items = {
+                                'type': i_field_spec['items'].get('type'),
+                            }
+                            if 'enum' in i_field_spec['items']:
+                                new_items['enum'] = i_field_spec['items']['enum']
+                            new_parameter.update({'items': new_items})
+                        operations['get']['parameters'].append(new_parameter)
+                    elif isinstance(i_field, fields.Nested) and \
+                            getattr(getattr(i_field.schema, 'Meta', object), 'filtering', False):
+                        # Делаем возможность фильтровать JSONB
+                        for i_field_jsonb_name, i_field_jsonb in i_field.schema._declared_fields.items():
+                            i_field_jsonb_spec = self.spec.components._schemas[resolver(type(i_field.schema))]['properties'][i_field_jsonb_name]
+                            if i_field_jsonb_spec.get('type') == 'object':
+                                # Пропускаем создание фильтров для dict. Просто не понятно как фильтровать по таким
+                                # полям
+                                continue
+                            new_parameter = {
+                                'name': f'filter[{i_field_name}__{i_field_jsonb_name}]',
+                                'in': 'query',
+                                'type': i_field_jsonb_spec.get('type'),
+                                'required': False,
+                                'description': f'{i_field_name}__{i_field_jsonb_name} attribute filter'
+                            }
+                            if 'items' in i_field_jsonb_spec:
+                                new_items = {
+                                    'type': i_field_jsonb_spec['items'].get('type'),
+                                }
+                                if 'enum' in i_field_jsonb_spec['items']:
+                                    new_items['enum'] = i_field_jsonb_spec['items']['enum']
+                                new_parameter.update({'items': new_items})
+                            operations['get']['parameters'].append(new_parameter)
+
         if 'post' in methods:
             operations['post'] = deepcopy(operations_all)
             operations['post']['responses'] = {
