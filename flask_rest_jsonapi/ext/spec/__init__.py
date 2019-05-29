@@ -1,18 +1,20 @@
 from copy import deepcopy
-
-from apispec import APISpec
-from apispec.ext.marshmallow import MarshmallowPlugin, resolver
 from typing import Dict, Any, Set, List, Union, Tuple
 
-from flask_rest_jsonapi import Api
-from flask_rest_jsonapi.ext.spec.compat import APISPEC_VERSION_MAJOR
-from flask_rest_jsonapi.ext.spec.plugins_for_apispec import RestfulPlugin
-from flask_rest_jsonapi.resource import ResourceList, ResourceDetail
+from apispec import APISpec
+from apispec.exceptions import APISpecError
+from apispec.ext.marshmallow import MarshmallowPlugin, resolver, OpenAPIConverter, make_schema_key, \
+    resolve_schema_instance
 from marshmallow import fields, Schema
 
+from flask_rest_jsonapi import Api
 from flask_rest_jsonapi.ext.spec.apispec import DocBlueprintMixin
+from flask_rest_jsonapi.ext.spec.compat import APISPEC_VERSION_MAJOR
+from flask_rest_jsonapi.ext.spec.plugins_for_apispec import RestfulPlugin
 from flask_rest_jsonapi.marshmallow_fields import Relationship
 from flask_rest_jsonapi.plugin import BasePlugin
+from flask_rest_jsonapi.resource import ResourceList, ResourceDetail
+from flask_rest_jsonapi.utils import create_schema_name
 
 
 class ApiSpecPlugin(BasePlugin, DocBlueprintMixin):
@@ -70,9 +72,9 @@ class ApiSpecPlugin(BasePlugin, DocBlueprintMixin):
         # Register schema definitions in spec
         for name, schema_cls, kwargs in self._definitions:
             if APISPEC_VERSION_MAJOR < 1:
-                self.spec.definition(name, schema=schema_cls, **kwargs)
+                self.spec.definition(create_schema_name(schema=schema_cls), schema=schema_cls, **kwargs)
             else:
-                self.spec.components.schema(name, schema=schema_cls, **kwargs)
+                self.spec.components.schema(create_schema_name(schema=schema_cls), schema=schema_cls, **kwargs)
         # Register custom converters in spec
         for args in self._converters:
             self.spec.register_converter(*args)
@@ -152,7 +154,7 @@ class ApiSpecPlugin(BasePlugin, DocBlueprintMixin):
         attributes = {}
         if resource.schema:
             attributes = {
-                '$ref': f'#/definitions/{resolver(resource.schema)}'
+                '$ref': f'#/definitions/{create_schema_name(resource.schema)}'
             }
         schema = default_schema if default_schema else {
             'type': 'object',
@@ -373,7 +375,7 @@ class ApiSpecPlugin(BasePlugin, DocBlueprintMixin):
         :param schema: schema marshmallow
         :return:
         """
-        name_schema = resolver(schema)
+        name_schema = create_schema_name(schema)
         if name_schema not in self.spec_schemas and name_schema not in self.spec.components._schemas:
             self.spec_schemas[name_schema] = schema
             if APISPEC_VERSION_MAJOR < 1:
@@ -394,3 +396,45 @@ class ApiSpecPlugin(BasePlugin, DocBlueprintMixin):
                 self.spec.add_tag(tag_in_spec)
             else:
                 self.spec.tag(tag_in_spec)
+
+
+# Рефактор, чтобы не выкидывались варнинги о том что схема уже добавлена, переделал формирования имени для существующих
+# схем
+def resolve_nested_schema(self, schema):
+    """Return the Open API representation of a marshmallow Schema.
+
+    Adds the schema to the spec if it isn't already present.
+
+    Typically will return a dictionary with the reference to the schema's
+    path in the spec unless the `schema_name_resolver` returns `None`, in
+    which case the returned dictoinary will contain a JSON Schema Object
+    representation of the schema.
+
+    :param schema: schema to add to the spec
+    """
+    schema_instance = resolve_schema_instance(schema)
+    schema_key = make_schema_key(schema_instance)
+    if schema_key not in self.refs:
+        schema_cls = self.resolve_schema_class(schema)
+        name = self.schema_name_resolver(schema_cls)
+        if not name:
+            try:
+                json_schema = self.schema2jsonschema(schema)
+            except RuntimeError:
+                raise APISpecError(
+                    "Name resolver returned None for schema {schema} which is "
+                    "part of a chain of circular referencing schemas. Please"
+                    " ensure that the schema_name_resolver passed to"
+                    " MarshmallowPlugin returns a string for all circular"
+                    " referencing schemas.".format(schema=schema)
+                )
+            if getattr(schema, "many", False):
+                return {"type": "array", "items": json_schema}
+            return json_schema
+        name = create_schema_name(schema=schema_instance)
+        if name not in self.spec.components._schemas:
+            self.spec.components.schema(name, schema=schema)
+    return self.get_ref_dict(schema_instance)
+
+
+OpenAPIConverter.resolve_nested_schema = resolve_nested_schema

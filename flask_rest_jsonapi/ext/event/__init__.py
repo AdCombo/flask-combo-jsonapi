@@ -1,7 +1,6 @@
 import urllib.parse
 
-from marshmallow import Schema, fields
-from marshmallow.class_registry import register
+from marshmallow import Schema
 
 from flask_rest_jsonapi.exceptions import PluginMethodNotImplementedError
 from flask_rest_jsonapi.plugin import BasePlugin
