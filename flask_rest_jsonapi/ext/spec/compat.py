@@ -1,4 +1,4 @@
-"""Stuff needed to support several versions of dependencies."""
+"""Stuff needed to support several versions of dependen_of type 'AttributeError' cies."""
 
 import marshmallow
 import apispec

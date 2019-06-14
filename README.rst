@@ -8,108 +8,117 @@
     :target: http://flask-rest-jsonapi.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status
 
-Это форк данной библиотеки [Flask-REST-JSONAPI](https://flask-rest-jsonapi.readthedocs.io/en/latest/quickstart.html)
-##################
 
-Flask-REST-JSONAPI is a flask extension for building REST APIs. It combines the power of `Flask-Restless <https://flask-restless.readthedocs.io/>`_ and the flexibility of `Flask-RESTful <https://flask-restful.readthedocs.io/>`_ around a strong specification `JSONAPI 1.0 <http://jsonapi.org/>`_. This framework is designed to quickly build REST APIs and fit the complexity of real life projects with legacy data and multiple data storages.
+ComboJSONAPI - это прокаченный форк библиотеки `Flask-REST-JSONAPI <https://flask-rest-jsonapi.readthedocs.io/en/latest/quickstart.html>`_
+==========================================================================================================================================
+В данном форке улучшено/добавлено следующее:
 
-Install
-=======
+1.  Библиотека переведена на marshmallow=3.0.0.
+2.  Улучшены фильтры. Теперь доступна глубокая фильтрация, например (см. ниже) и нам нужно выгрузить всех пользователей, у которых менеджер находится в определённой группе с названием начинающимся на `Test`:code:\, фильтр будет выглядеть следующим образом:
 
-    pip install Flask-REST-JSONAPI
+    .. code:: python
 
-A minimal API
-=============
+        filter=[{"name": "manager_id__group_id__name", "op": "ilike", "val": "Test%"}]
 
-.. code-block:: python
+    - есть таблица `User`:code:\ с полями:
+        - `manager_id`:code:\,  которое является "внешним" ключом к таблице `User`:code:\
+        - `group_id`:code:\,  которое является "внешним" ключом к таблице `Group`:code:\
+    - есть таблица `Group`:code:\ с полем:
+        - `name`:code:\ - имя группы
+3. Улучшены сортировки. Теперь доступна глубокая сортировка, принцип как у глубокой фильтрации
+4. Добавлена десериализация/валидация значение, которые приходят для фильтров
+5. Добавлена возможность для кастомных полей добавлять свой метод для создания фильтра и сортировки к БД (подробнее будет описано ниже).
+6. Добавлена поддержка плагинов (`Подробнее <docs/plugins/create_plugins.rst>`_).
+7. Разработан плагин **Permission** позволяющий создавать различные системы доступа к моделям и полям на выгрузку/создание/изменение/удаление (`Подробнее <docs/plugins/permission_plugin.rst>`_)
+8. Разработан плагин **ApiSpecPlugin** позволяющий генерировать упрощённую автодокументацию для JSONAPI (`Подробнее <docs/plugins/api_spec_plugin.rst>`_)
+9. Разработан плагин **RestfulPlugin** для библиотеки apispec внутри плагина **ApiSpecPlugin** способствующий описанию параметров в get запросах при помощью схем marshmallow (`Подробнее <docs/plugins/restful_plugin.rst>`_)
+10. Разработан плагин **EventPlugin** для создания RPC, для тех случаев когда очень тяжело обойтись только JSON:API (`Подробнее <docs/plugins/event_plugin.rst>`_).
+11. Разработан плагин **PostgreSqlJSONB** для возможности фильтровать и сортировать по верхним ключам в полях `JSONB`:code:\ в PostgreSQL (`Подробнее <docs/plugins/postgresql_jsonb.rst>`_).
 
-    # -*- coding: utf-8 -*-
 
-    from flask import Flask
-    from flask_rest_jsonapi import Api, ResourceDetail, ResourceList
-    from flask_sqlalchemy import SQLAlchemy
-    from marshmallow_jsonapi.flask import Schema
+Пример создания у кастомных полей спецефичных фильтров в запросах к БД
+----------------------------------------------------------------------
+Например, у нас есть тип данных `Flag`:code:\ построенный на основе работы с битами. В БД всегда будет храниться число.
+
+.. code:: python
+
+    from enum import Enum
+
+    class Flag(Enum):
+        null = 1
+        success = 1 << 1
+        in_process = 1 << 2
+        error = 1 << 3
+
+Чтобы клиент мог работать с флагами не задумываясь, как это работает за кулисами, нам нужно создать свой тип поля для
+`marshmallow`:code:\, в которой реализуем сериализацию и десериализацию. Из коробки JSON:API, также не сможет работать с
+таким видом данных, не фильтровать, не обновлять, не корректно выгружать, если конечно мы не зотим чтобы пользователь
+сам уже разбирался с корректным предстовлением данного флага.
+
+.. code:: python
+
+    from enum import Enum
     from marshmallow_jsonapi import fields
+    from sqlalchemy import and_, or_
+    from sqlalchemy.sql.functions import GenericFunction
+    from sqlalchemy import Integer
 
-    # Create the Flask application and the Flask-SQLAlchemy object.
-    app = Flask(__name__)
-    app.config['DEBUG'] = True
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/test.db'
-    db = SQLAlchemy(app)
 
-    # Create model
-    class Person(db.Model):
-        id = db.Column(db.Integer, primary_key=True)
-        name = db.Column(db.String)
+    class BitAnd(GenericFunction):
+        type = Integer
+        package = 'adc_custom'
+        name = 'bit_and'
+        identifier = 'bit_and'
 
-    # Create the database.
-    db.create_all()
 
-    # Create schema
-    class PersonSchema(Schema):
-        class Meta:
-            type_ = 'person'
-            self_view = 'person_detail'
-            self_view_kwargs = {'id': '<id>'}
-            self_view_many = 'person_list'
+    def bit_and(*args, **kwargs):
+        return BitAnd(*args, **kwargs)
 
-        id = fields.Integer(as_string=True, dump_only=True)
-        name = fields.Str()
 
-    # Create resource managers
-    class PersonList(ResourceList):
-        schema = PersonSchema
-        data_layer = {'session': db.session,
-                      'model': Person}
+    class FlagField(fields.List):
+        def __init__(self, *args, flags_enum=None, **kwargs):
+            if flags_enum is None or not issubclass(flags_enum, Enum):
+                raise ValueError("invalid attr %s" % flags_enum)
+            self.flags_enum = flags_enum
 
-    class PersonDetail(ResourceDetail):
-        schema = PersonSchema
-        data_layer = {'session': db.session,
-                      'model': Person}
+            # Тип FlagField - это массив для сваггера, а элементы этого массива строки
+            super().__init__(fields.String(enum=[e.name for e in self.flags_enum]), *args, **kwargs)
 
-    # Create the API object
-    api = Api(app)
-    api.route(PersonList, 'person_list', '/persons')
-    api.route(PersonDetail, 'person_detail', '/persons/<int:id>')
+        @classmethod
+        def _set_flag(cls, flag, add_flag):
+            if add_flag:
+                flag |= add_flag
+            return flag
 
-    # Start the flask loop
-    if __name__ == '__main__':
-        app.run()
+        def _deserialize(self, value, attr, data, **kwargs):
+            flag = 0
+            for i_flag in value:
+                flag |= getattr(self.flags_enum, i_flag, 1).value
+            return flag
 
-This example provides the following API structure:
+        def _serialize(self, value, attr, obj, **kwargs):
+            return [
+                i_flag.name
+                for i_flag in self.flags_enum
+                if value & i_flag.value == i_flag.value
+            ]
 
-========================  ======  =============  ===========================
-URL                       method  endpoint       Usage
-========================  ======  =============  ===========================
-/persons                  GET     person_list    Get a collection of persons
-/persons                  POST    person_list    Create a person
-/persons/<int:person_id>  GET     person_detail  Get person details
-/persons/<int:person_id>  PATCH   person_detail  Update a person
-/persons/<int:person_id>  DELETE  person_detail  Delete a person
-========================  ======  =============  ===========================
+        def _in_sql_filter_(self, marshmallow_field, model_column, value, operator):
+            """
+            Создаёт фильтр для sqlalchemy с оператором in
+            :param marshmallow_field: объект класса поля marshmallow
+            :param model_column: объект класса поля sqlalchemy
+            :param value: значения для фильтра
+            :param operator: сам оператор, например: "eq", "in"...
+            :return:
+            """
+            filters_flag = []
+            for i_flag in value:
+                flag = self._deserialize(0, self.flags_enum[i_flag], None, None)
+                filters_flag.append(and_(flag != 0, model_column != 0, bit_and(model_column, flag) != 0))
+            return or_(*filters_flag)
 
-Flask-REST-JSONAPI vs `Flask-RESTful <http://flask-restful-cn.readthedocs.io/en/0.3.5/a>`_
-==========================================================================================
 
-* In contrast to Flask-RESTful, Flask-REST-JSONAPI provides a default implementation of get, post, patch and delete methods around a strong specification JSONAPI 1.0. Thanks to this you can build REST API very quickly.
-* Flask-REST-JSONAPI is as flexible as Flask-RESTful. You can rewrite every default method implementation to make custom work like distributing object creation.
 
-Flask-REST-JSONAPI vs `Flask-Restless <https://flask-restless.readthedocs.io/en/stable/>`_
-==========================================================================================
 
-* Flask-REST-JSONAPI is a real implementation of JSONAPI 1.0 specification. So in contrast to Flask-Restless, Flask-REST-JSONAPI forces you to create a real logical abstration over your data models with `Marshmallow <https://marshmallow.readthedocs.io/en/latest/>`_. So you can create complex resource over your data.
-* In contrast to Flask-Restless, Flask-REST-JSONAPI can use any ORM or data storage through the data layer concept, not only `SQLAlchemy <http://www.sqlalchemy.org/>`_. A data layer is a CRUD interface between your resource and one or more data storage so you can fetch data from any data storage of your choice or create resource that use multiple data storages.
-* Like I said previously, Flask-REST-JSONAPI is a real implementation of JSONAPI 1.0 specification. So in contrast to Flask-Restless you can manage relationships via REST. You can create dedicated URL to create a CRUD API to manage relationships.
-* Plus Flask-REST-JSONAPI helps you to design your application with strong separation between resource definition (schemas), resource management (resource class) and route definition to get a great organization of your source code.
-* In contrast to Flask-Restless, Flask-REST-JSONAPI is highly customizable. For example you can entirely customize your URLs, define multiple URLs for the same resource manager, control serialization parameters of each method and lots of very useful parameters.
-* Finally in contrast to Flask-Restless, Flask-REST-JSONAPI provides a great error handling system according to JSONAPI 1.0. Plus the exception handling system really helps the API developer to quickly find missing resources requirements.
-
-Documentation
-=============
-
-Documentation available here: http://flask-rest-jsonapi.readthedocs.io/en/latest/
-
-Thanks
-======
-
-Flask, marshmallow, marshmallow_jsonapi, sqlalchemy, Flask-RESTful and Flask-Restless are awesome projects. These libraries gave me inspiration to create Flask-REST-JSONAPI, so huge thanks to authors and contributors.
+Автор форка: `Aleksei Nekrasov (znbiz) <https://github.com/Znbiz>`_
