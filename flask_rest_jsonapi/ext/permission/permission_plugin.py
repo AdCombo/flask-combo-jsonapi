@@ -329,12 +329,30 @@ class PermissionPlugin(BasePlugin):
         # для данного пользователя
         field_foreign_key = get_model_field(cls_schema, name_foreign_key)
         mapper = cls._get_model(model, field_foreign_key)
+        current_schema = cls._get_schema(cls_schema, name_foreign_key)
         permission_for_get: PermissionForGet = permission.permission_for_get(mapper)
         # ограничиваем выгрузку полей в соответствие с пермишенами
         if permission_for_get.columns is not None:
-            name_columns = list(set(cls_schema._declared_fields.keys()) & permission_for_get.columns)
+            name_columns = list(set(current_schema._declared_fields.keys()) & permission_for_get.columns)
             return name_columns
         return []
+
+    @classmethod
+    def _get_schema(cls, current_schema: SchemaABC, obj: str):
+        """
+        Получаем схему на которую ссылается Nested
+        :param current_schema: схема изначальная
+        :param obj: поле в current_schema
+        :return:
+        """
+        related_schema_cls = get_related_schema(current_schema, obj)
+
+        if isinstance(related_schema_cls, SchemaABC):
+            related_schema_cls = related_schema_cls.__class__
+        else:
+            related_schema_cls = class_registry.get_class(related_schema_cls)
+
+        return related_schema_cls
 
     @classmethod
     def _eagerload_includes(cls, query, qs, permission: PermissionUser = None, self_json_api=None):
@@ -381,14 +399,7 @@ class PermissionPlugin(BasePlugin):
                         name_columns = set(name_columns) & set(user_requested_columns)
                     joinload_object.load_only(*list(name_columns))
 
-                    related_schema_cls = get_related_schema(current_schema, obj)
-
-                    if isinstance(related_schema_cls, SchemaABC):
-                        related_schema_cls = related_schema_cls.__class__
-                    else:
-                        related_schema_cls = class_registry.get_class(related_schema_cls)
-
-                    current_schema = related_schema_cls
+                    current_schema = cls._get_schema(current_schema, obj)
             else:
                 try:
                     field = get_model_field(self_json_api.resource.schema, include)
