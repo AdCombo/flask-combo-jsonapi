@@ -3,11 +3,11 @@
 """Helper to create sqlalchemy filters according to filter querystring parameter"""
 from marshmallow import fields, ValidationError
 from sqlalchemy import and_, or_, not_, sql
-from sqlalchemy.orm import aliased, util, attributes
+from sqlalchemy.orm import aliased
 from typing import Any, List, Tuple
 
 from flask_rest_jsonapi.exceptions import InvalidFilters
-from flask_rest_jsonapi.ext.postgresql_jsonb.schema import SchemaJOSNB
+from flask_rest_jsonapi.ext.postgresql_jsonb.schema import SchemaJSONB
 from flask_rest_jsonapi.schema import get_relationships, get_model_field
 
 Filter = sql.elements.BinaryExpression
@@ -87,7 +87,7 @@ class Node(object):
         :param value:
         :return:
         """
-        if not isinstance(getattr(marshmallow_field, 'schema', None), SchemaJOSNB):
+        if not isinstance(getattr(marshmallow_field, 'schema', None), SchemaJSONB):
             raise InvalidFilters(f'Invalid JSONB filter: {"__".join(self.fields)}')
         marshmallow_field = marshmallow_field.schema._declared_fields[self.field_in_jsonb]
         if hasattr(marshmallow_field, f'_{operator}_sql_filter_'):

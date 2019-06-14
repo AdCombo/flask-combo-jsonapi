@@ -5,7 +5,7 @@ from marshmallow import Schema
 from werkzeug.datastructures import ImmutableMultiDict
 
 from flask_rest_jsonapi.ext.postgresql_jsonb.filtering.alchemy import create_filters
-from flask_rest_jsonapi.ext.postgresql_jsonb.schema import SchemaJOSNB
+from flask_rest_jsonapi.ext.postgresql_jsonb.schema import SchemaJSONB
 from flask_rest_jsonapi.marshmallow_fields import Relationship
 from flask_rest_jsonapi.querystring import QueryStringManager
 from sqlalchemy.orm import Query
@@ -24,7 +24,7 @@ class PostgreSqlJSONB(BasePlugin):
         """
         fields = filter_name.split('__')
         for i, i_field in enumerate(fields):
-            if isinstance(getattr(schema._declared_fields[i_field], 'schema', None), SchemaJOSNB):
+            if isinstance(getattr(schema._declared_fields[i_field], 'schema', None), SchemaJSONB):
                 if i != (len(fields) - 2):
                     raise InvalidFilters(f'Invalid JSONB filter: {filter_name}')
                 return True
