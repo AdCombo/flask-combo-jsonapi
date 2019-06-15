@@ -235,7 +235,7 @@ class ApiSpecPlugin(BasePlugin, DocBlueprintMixin):
                     type_schemas.add(i_field.schema.Meta.type_)
 
             # Filter
-            if not (methods - {'get', 'post'}):
+            if issubclass(resource, ResourceList):
                 # List data
                 operations['get']['parameters'].append({
                     'default': 1,
