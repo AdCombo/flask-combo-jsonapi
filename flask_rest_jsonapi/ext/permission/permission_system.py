@@ -2,7 +2,7 @@ import math
 from copy import deepcopy
 from typing import Set, List, Dict, Any, Tuple
 
-from sqlalchemy.orm import class_mapper, ColumnProperty
+from sqlalchemy.orm import class_mapper, ColumnProperty, RelationshipProperty
 
 from flask_rest_jsonapi.exceptions import JsonApiException
 
@@ -228,7 +228,11 @@ class PermissionUser:
                     return self._cache_get[model_name]
             # Если у данной схемы нет ограничений знчит доступны все поля в маппере
             self._cache_get[model_name] = PermissionForGet(
-                allow_columns=[prop.key for prop in class_mapper(model).iterate_properties if isinstance(prop, ColumnProperty)]
+                allow_columns=[
+                    prop.key
+                    for prop in class_mapper(model).iterate_properties
+                    if isinstance(prop, ColumnProperty) or isinstance(prop, RelationshipProperty)
+                ]
             )
         return self._cache_get[model_name]
 

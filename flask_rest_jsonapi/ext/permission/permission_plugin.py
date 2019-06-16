@@ -2,6 +2,7 @@ from collections import OrderedDict
 from functools import wraps
 from typing import Union, Tuple, List, Dict
 
+from flask_rest_jsonapi.marshmallow_fields import Relationship
 from marshmallow import class_registry, fields
 from marshmallow.base import SchemaABC
 from werkzeug.datastructures import ImmutableMultiDict
@@ -12,7 +13,7 @@ from flask_rest_jsonapi.querystring import QueryStringManager
 
 from flask_rest_jsonapi.schema import get_model_field, get_related_schema
 from raven.events import Query
-from sqlalchemy.orm import load_only, joinedload
+from sqlalchemy.orm import load_only, joinedload, ColumnProperty
 
 from flask_rest_jsonapi import Api
 from flask_rest_jsonapi.ext.permission.permission_system import PermissionUser, PermissionToMapper, PermissionForGet
@@ -35,76 +36,6 @@ def permission(method, request_type: str, many=False, decorators=None):
 
 
 class PermissionPlugin(BasePlugin):
-    # def after_route(self,
-    #                 resource: Union[ResourceList, ResourceDetail] = None,
-    #                 view=None,
-    #                 urls: Tuple[str] = None,
-    #                 self_json_api: Api = None,
-    #                 **kwargs) -> None:
-    #     """
-    #     Навешиваем декараторы (с инициализацией пермишенов) на роутеры
-    #     :param resource:
-    #     :param view:
-    #     :param urls:
-    #     :param self_json_api:
-    #     :param kwargs:
-    #     :return:
-    #     """
-    #     model = resource.data_layer['model']
-    #
-    #     if issubclass(resource, ResourceList):
-    #         if hasattr(resource, 'get'):
-    #             old_method = getattr(resource, 'get')
-    #             new_method = permission(
-    #                 old_method, request_type='get', many=True, decorators=self_json_api.decorators)
-    #             setattr(resource, 'get', new_method)
-    #             PermissionToMapper.add_permission(type_='get_list', model=model,
-    #                                               permission_class=resource.data_layer.get('permission_get', []))
-    #
-    #         if hasattr(resource, 'post'):
-    #             old_method = getattr(resource, 'post')
-    #             new_method = permission(
-    #                 old_method, request_type='post', many=True, decorators=self_json_api.decorators)
-    #             setattr(resource, 'post', new_method)
-    #             PermissionToMapper.add_permission(type_='post', model=model,
-    #                                               permission_class=resource.data_layer.get('permission_post', []))
-    #
-    #     if issubclass(resource, ResourceDetail):
-    #         if hasattr(resource, 'get'):
-    #             old_method = getattr(resource, 'get')
-    #             new_method = permission(
-    #                 old_method, request_type='get', many=False, decorators=self_json_api.decorators)
-    #             setattr(resource, 'get', new_method)
-    #             PermissionToMapper.add_permission(type_='get', model=model,
-    #                                               permission_class=resource.data_layer.get('permission_get', []))
-    #
-    #         if hasattr(resource, 'patch'):
-    #             old_method = getattr(resource, 'patch')
-    #             new_method = permission(
-    #                 old_method, request_type='patch', many=False, decorators=self_json_api.decorators)
-    #             setattr(resource, 'patch', new_method)
-    #             PermissionToMapper.add_permission(type_='patch', model=model,
-    #                                               permission_class=resource.data_layer.get('permission_patch', []))
-    #
-    #         if hasattr(resource, 'post'):
-    #             old_method = getattr(resource, 'post')
-    #             new_method = permission(
-    #                 old_method, request_type='post', many=False, decorators=self_json_api.decorators)
-    #             setattr(resource, 'post', new_method)
-    #             # Для Post запроса в ResourceDetail не нужны пермишены, они берутся из ResourceList,
-    #             # так как новый элемнт создаётся через ResourceList, а POST запросы в ResourceDetail
-    #             # могут быть связанны с собыйтиным api EventsResource. В собыйтином api безопасность ложится
-    #             # полностью на того кто разрабатывает его, также в любой момент можно обратиться к любому пермишену
-    #             # из любого собыйтиного api, так как ссылка на истанц PermissionUser (активный в контектсе данного
-    #             # api передаётся в kwargs['_permission_user']
-    #
-    #         if hasattr(resource, 'delete'):
-    #             old_method = getattr(resource, 'delete')
-    #             new_method = permission(
-    #                 old_method, request_type='delete', many=False, decorators=self_json_api.decorators)
-    #             setattr(resource, 'delete', new_method)
-    #             PermissionToMapper.add_permission(type_='delete', model=model,
-    #                                               permission_class=resource.data_layer.get('permission_delete', []))
 
     def after_route(self,
                     resource: Union[ResourceList, ResourceDetail] = None,
@@ -184,9 +115,11 @@ class PermissionPlugin(BasePlugin):
         permission_user: PermissionUser = kwargs.get('_permission_user')
         if permission_user is None:
             raise Exception("No permission for user")
-        name_fields = set(
-            schema._declared_fields.keys()) & \
-            permission_user.permission_for_get(model=model).columns
+        name_fields = []
+        for i_name_field, i_field in schema._declared_fields.items():
+            if isinstance(i_field, Relationship) \
+                    or i_name_field in permission_user.permission_for_get(model=model).columns:
+                name_fields.append(i_name_field)
         only = getattr(schema, 'only')
         only = set(only) if only else set(name_fields)
         # Оставляем поля только те, которые пользователь запросил через параметр fields[...]
@@ -271,6 +204,10 @@ class PermissionPlugin(BasePlugin):
         user_requested_columns = qs.fields.get(self_json_api.resource.schema.Meta.type_)
         if user_requested_columns:
             name_columns = list(set(name_columns) & set(user_requested_columns))
+        # Убираем relationship поля
+        name_columns = [
+            i_name for i_name in name_columns if isinstance(getattr(self_json_api.model, i_name, None), ColumnProperty)]
+
         query = query.options(load_only(*name_columns))
         query = self._eagerload_includes(query, qs, permission, self_json_api=self_json_api)
 
@@ -303,6 +240,10 @@ class PermissionPlugin(BasePlugin):
         user_requested_columns = qs.fields.get(self_json_api.resource.schema.Meta.type_)
         if user_requested_columns:
             name_columns = list(set(name_columns) & set(user_requested_columns))
+        # Убираем relationship поля
+        name_columns = [
+            i_name for i_name in name_columns if isinstance(getattr(self_json_api.model, i_name, None), ColumnProperty)]
+
         query = query.options(load_only(*name_columns))
 
         # Запретим использовать стандартную функцию eagerload_includes для присоединения сторонних молелей
@@ -392,7 +333,10 @@ class PermissionPlugin(BasePlugin):
         :return:
         """
         old_fields = qs._get_key_values('fields')
-        new_fields = list(set(old_fields.get(type_schema, [])) & set(fields))
+        if type_schema in old_fields:
+            new_fields = list(set(old_fields.get(type_schema, [])) & set(fields))
+        else:
+            new_fields = fields
         new_qs = {k: v for k, v in qs.qs.items() if v != ''}
         include = new_qs.get('include', '').split(',')
         if not new_fields and include and name_foreign_key in include:
@@ -423,6 +367,8 @@ class PermissionPlugin(BasePlugin):
         if permission_for_get.columns is not None:
             name_columns = list(set(current_schema._declared_fields.keys()) & permission_for_get.columns)
         cls._update_qs_fields(current_schema.Meta.type_, name_columns, qs=qs, name_foreign_key=name_foreign_key)
+        # Убираем relationship поля
+        name_columns = [i_name for i_name in name_columns if isinstance(getattr(model, i_name, None), ColumnProperty)]
         return name_columns
 
     @classmethod
