@@ -64,7 +64,8 @@ class SqlalchemyDataLayer(BaseDataLayer):
         obj = self.model(**{key: value
                             for (key, value) in data.items() if key not in join_fields})
         self.apply_relationships(data, obj)
-        self.apply_nested_fields(data, obj)
+        # Конфликтует с переделанным полем Relationship
+        # self.apply_nested_fields(data, obj)
 
         for i_plugins in self.resource.plugins:
             try:
@@ -505,7 +506,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
                     related_object = None
 
                     if value is not None:
-                        related_object = self.get_related_object(related_model, related_id_field, {'id': value['id']})
+                        related_object = self.get_related_object(related_model, related_id_field, {'id': value})
 
                     relationships_to_apply.append({'field': key, 'value': related_object})
 
