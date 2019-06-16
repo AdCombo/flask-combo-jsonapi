@@ -294,7 +294,7 @@ class ApiSpecPlugin(BasePlugin, DocBlueprintMixin):
                             getattr(getattr(i_field.schema, 'Meta', object), 'filtering', False):
                         # Делаем возможность фильтровать JSONB
                         for i_field_jsonb_name, i_field_jsonb in i_field.schema._declared_fields.items():
-                            i_field_jsonb_spec = self.spec.components._schemas[resolver(type(i_field.schema))]['properties'][i_field_jsonb_name]
+                            i_field_jsonb_spec = self.spec.components._schemas[create_schema_name(schema=i_field.schema)]['properties'][i_field_jsonb_name]
                             if i_field_jsonb_spec.get('type') == 'object':
                                 # Пропускаем создание фильтров для dict. Просто не понятно как фильтровать по таким
                                 # полям
