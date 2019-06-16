@@ -3,10 +3,8 @@ from typing import Dict, Any, Set, List, Union, Tuple
 
 from apispec import APISpec
 from apispec.exceptions import APISpecError
-from apispec.ext.marshmallow import MarshmallowPlugin, resolver, OpenAPIConverter, make_schema_key, \
+from apispec.ext.marshmallow import MarshmallowPlugin, OpenAPIConverter, make_schema_key, \
     resolve_schema_instance
-from marshmallow import fields, Schema
-
 from flask_rest_jsonapi import Api
 from flask_rest_jsonapi.ext.spec.apispec import DocBlueprintMixin
 from flask_rest_jsonapi.ext.spec.compat import APISPEC_VERSION_MAJOR
@@ -15,6 +13,7 @@ from flask_rest_jsonapi.marshmallow_fields import Relationship
 from flask_rest_jsonapi.plugin import BasePlugin
 from flask_rest_jsonapi.resource import ResourceList, ResourceDetail
 from flask_rest_jsonapi.utils import create_schema_name
+from marshmallow import fields, Schema
 
 
 class ApiSpecPlugin(BasePlugin, DocBlueprintMixin):
@@ -228,7 +227,7 @@ class ApiSpecPlugin(BasePlugin, DocBlueprintMixin):
                         'description': description.format(i_field.schema.Meta.type_),
                         'items': {
                             'type': 'string',
-                            'enum': list(self.spec.components._schemas[resolver(type(i_field.schema))]['properties'].keys())
+                            'enum': list(self.spec.components._schemas[create_schema_name(schema=i_field.schema)]['properties'].keys())
                         }
                     }
                     operations['get']['parameters'].append(new_parameter)
@@ -269,7 +268,7 @@ class ApiSpecPlugin(BasePlugin, DocBlueprintMixin):
                 })
                 # Add filters for fields
                 for i_field_name, i_field in resource.schema._declared_fields.items():
-                    i_field_spec = self.spec.components._schemas[resolver(resource.schema)]['properties'][i_field_name]
+                    i_field_spec = self.spec.components._schemas[create_schema_name(schema=resource.schema)]['properties'][i_field_name]
                     if not isinstance(i_field, fields.Nested):
                         if i_field_spec.get('type') == 'object':
                             # Пропускаем создание фильтров для dict. Просто не понятно как фильтровать по таким
