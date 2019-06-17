@@ -112,6 +112,7 @@ class PermissionPlugin(BasePlugin):
         :param kwargs:
         :return:
         """
+        pass
         permission_user: PermissionUser = kwargs.get('_permission_user')
         if permission_user is None:
             raise Exception("No permission for user")
@@ -127,7 +128,7 @@ class PermissionPlugin(BasePlugin):
         only = tuple(only)
         schema.fields = OrderedDict(**{name: val for name, val in schema.fields.items() if name in only})
 
-        setattr(schema, 'only', only)
+        schema.only = only
 
         # навешиваем ограничения на поля схемы, на которую указывает поле JSONB. Если
         # ограничений нет, то выгружаем все поля
@@ -136,7 +137,7 @@ class PermissionPlugin(BasePlugin):
             if isinstance(i_field, fields.Nested) and \
                     getattr(getattr(i_field.schema, 'Meta', object), 'filtering', False) and \
                     jsonb_only is not None:
-                setattr(i_field.schema, 'only', tuple(jsonb_only))
+                i_field.schema.only = tuple(jsonb_only)
                 i_field.schema.fields = OrderedDict(**{name: val for name, val in i_field.schema.fields.items() if name in jsonb_only})
 
         include_data = tuple(i_include for i_include in getattr(schema, 'include_data', []) if i_include in name_fields)
