@@ -64,8 +64,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
         obj = self.model(**{key: value
                             for (key, value) in data.items() if key not in join_fields})
         self.apply_relationships(data, obj)
-        # Конфликтует с переделанным полем Relationship
-        # self.apply_nested_fields(data, obj)
+        self.apply_nested_fields(data, obj)
 
         for i_plugins in self.resource.plugins:
             try:
@@ -203,7 +202,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
                 setattr(obj, key, value)
 
         self.apply_relationships(data, obj)
-        # self.apply_nested_fields(data, obj)
+        self.apply_nested_fields(data, obj)
 
         try:
             self.session.commit()
