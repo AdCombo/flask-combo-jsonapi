@@ -116,7 +116,7 @@ class PermissionPlugin(BasePlugin):
         if permission_user is None:
             raise Exception("No permission for user")
         name_fields = []
-        for i_name_field, i_field in schema._declared_fields.items():
+        for i_name_field, i_field in schema.declared_fields.items():
             if isinstance(i_field, Relationship) \
                     or i_name_field in permission_user.permission_for_get(model=model).columns:
                 name_fields.append(i_name_field)
@@ -146,7 +146,7 @@ class PermissionPlugin(BasePlugin):
             if i_include in schema.fields:
                 field = get_model_field(schema, i_include)
                 i_model = cls._get_model(model, field)
-                cls._permission_for_schema(schema=schema._declared_fields[i_include].schema,
+                cls._permission_for_schema(schema=schema.declared_fields[i_include].__dict__['_Relationship__schema'],
                                            model=i_model, **kwargs)
 
     def after_init_schema_in_resource_list_post(self, *args, schema=None, model=None, **kwargs):
@@ -205,8 +205,7 @@ class PermissionPlugin(BasePlugin):
         if user_requested_columns:
             name_columns = list(set(name_columns) & set(user_requested_columns))
         # Убираем relationship поля
-        name_columns = [
-            i_name for i_name in name_columns if isinstance(getattr(self_json_api.model, i_name, None), ColumnProperty)]
+        name_columns = [i_name for i_name in name_columns if i_name in self_json_api.model.__table__.columns.keys()]
 
         query = query.options(load_only(*name_columns))
         query = self._eagerload_includes(query, qs, permission, self_json_api=self_json_api)
@@ -241,8 +240,7 @@ class PermissionPlugin(BasePlugin):
         if user_requested_columns:
             name_columns = list(set(name_columns) & set(user_requested_columns))
         # Убираем relationship поля
-        name_columns = [
-            i_name for i_name in name_columns if isinstance(getattr(self_json_api.model, i_name, None), ColumnProperty)]
+        name_columns = [i_name for i_name in name_columns if i_name in self_json_api.model.__table__.columns.keys()]
 
         query = query.options(load_only(*name_columns))
 
@@ -367,8 +365,6 @@ class PermissionPlugin(BasePlugin):
         if permission_for_get.columns is not None:
             name_columns = list(set(current_schema._declared_fields.keys()) & permission_for_get.columns)
         cls._update_qs_fields(current_schema.Meta.type_, name_columns, qs=qs, name_foreign_key=name_foreign_key)
-        # Убираем relationship поля
-        name_columns = [i_name for i_name in name_columns if isinstance(getattr(model, i_name, None), ColumnProperty)]
         return name_columns
 
     @classmethod
@@ -432,6 +428,13 @@ class PermissionPlugin(BasePlugin):
                     user_requested_columns = qs.fields.get(current_schema.Meta.type_)
                     if user_requested_columns:
                         name_columns = set(name_columns) & set(user_requested_columns)
+                    # Убираем relationship поля
+                    name_columns = [
+                        i_name
+                        for i_name in name_columns
+                        if i_name in joinload_object.path[0].prop.mapper.columns.keys()
+                    ]
+
                     joinload_object.load_only(*list(name_columns))
             else:
                 try:
@@ -452,6 +455,13 @@ class PermissionPlugin(BasePlugin):
                 user_requested_columns = qs.fields.get(related_schema_cls.Meta.type_)
                 if user_requested_columns:
                     name_columns = set(name_columns) & set(user_requested_columns)
+                # Убираем relationship поля
+                name_columns = [
+                    i_name
+                    for i_name in name_columns
+                    if i_name in joinload_object.path[0].prop.mapper.columns.keys()
+                ]
+
                 joinload_object.load_only(*list(name_columns))
 
             query = query.options(joinload_object)
