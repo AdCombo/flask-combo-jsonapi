@@ -1,12 +1,26 @@
+import datetime
+from decimal import Decimal
 from typing import Any
 
+from sqlalchemy import cast, String, Integer, Boolean, DECIMAL
+from sqlalchemy.sql.elements import or_
+
 from flask_rest_jsonapi.data_layers.filtering.alchemy import deserialize_field
-from marshmallow import Schema
+from marshmallow import Schema, fields as ma_fields
 
 from flask_rest_jsonapi.exceptions import InvalidFilters
 from flask_rest_jsonapi.ext.postgresql_jsonb.schema import SchemaJSONB
 from flask_rest_jsonapi.marshmallow_fields import Relationship
 from flask_rest_jsonapi.plugin import BasePlugin
+
+
+def is_seq_collection(obj):
+    """
+    является ли переданный объект set, list, tuple
+    :param obj:
+    :return bool:
+    """
+    return isinstance(obj, (list, set, tuple))
 
 
 class PostgreSqlJSONB(BasePlugin):
@@ -86,7 +100,38 @@ class PostgreSqlJSONB(BasePlugin):
                 value=value,
                 operator=self_nested.operator
             )
+        mapping = {v: k for k, v in self_nested.schema.TYPE_MAPPING.items()}
+        mapping[ma_fields.Email] = str
+        mapping[ma_fields.Dict] = dict
+        mapping[ma_fields.List] = list
+        mapping[ma_fields.Decimal] = Decimal
+        mapping[ma_fields.Url] = str
+        mapping[ma_fields.LocalDateTime] = datetime.datetime
+
         # Нужно проводить валидацию и делать десериализацию значение указанных в фильтре, так как поля Enum
         # например выгружаются как 'name_value(str)', а в БД хранится как просто число
         value = deserialize_field(marshmallow_field, value)
-        return getattr(model_column.op('->>')(field_in_jsonb), self_nested.operator)(value)
+
+        property_type = mapping[type(marshmallow_field)]
+        extra_field = model_column.op('->>')(field_in_jsonb)
+        filter = ''
+        if property_type == Decimal:
+            filter = getattr(cast(extra_field, DECIMAL), self_nested.operator)(value)
+
+        if property_type in {str, bytes}:
+            filter = getattr(cast(extra_field, String), self_nested.operator)(value)
+
+        if property_type == int:
+            field = cast(extra_field, Integer)
+            if value:
+                filter = getattr(field, self_nested.operator)(value)
+            else:
+                filter = or_(getattr(field, self_nested.operator)(value), field.is_(None))
+
+        if property_type == bool:
+            filter = (cast(extra_field, Boolean) == value)
+
+        if property_type == list:
+            filter = model_column.op('->')(field_in_jsonb).op('?')(value[0] if is_seq_collection(value) else value)
+
+        return filter
