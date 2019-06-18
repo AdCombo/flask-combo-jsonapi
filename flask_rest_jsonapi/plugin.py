@@ -1,12 +1,9 @@
 """Base class for Plugin classes."""
-from typing import Union, List, Tuple, Dict
+from typing import List, Tuple, Dict, Any
 
-from flask_rest_jsonapi.querystring import QueryStringManager
-from sqlalchemy.orm import Query, joinedload
+from sqlalchemy.orm import Query
 
-from flask_rest_jsonapi import Api
 from flask_rest_jsonapi.exceptions import PluginMethodNotImplementedError
-from flask_rest_jsonapi.resource import ResourceDetail, ResourceList
 
 
 class BasePlugin(object):
@@ -20,34 +17,34 @@ class BasePlugin(object):
         raise PluginMethodNotImplementedError
 
     def before_route(self,
-                     resource: Union[ResourceList, ResourceDetail] = None,
+                     resource: Any = None,
                      view=None,
                      urls: Tuple[str] = None,
-                     self_json_api: Api = None,
+                     self_json_api: Any = None,
                      **kwargs) -> None:
         """
         Предобработка ресурс менеджеров до создания роутера
-        :param resource: ресурс менеджер
+        :param Union[ResourceList, ResourceDetail] resource: ресурс менеджер
         :param view: название ресурс менеджера
         :param urls: список url, по которым будет доступен данный ресурс
-        :param self_json_api: self json_api
+        :param Api self_json_api: self json_api
         :param kwargs:
         :return:
         """
         raise PluginMethodNotImplementedError
 
     def after_route(self,
-                    resource: Union[ResourceList, ResourceDetail] = None,
+                    resource: Any = None,
                     view=None,
                     urls: Tuple[str] = None,
-                    self_json_api: Api = None,
+                    self_json_api: Any = None,
                     **kwargs) -> None:
         """
         Постбработка ресурс менеджеров после создания роутера
-        :param resource: ресурс менеджер
+        :param Union[ResourceList, ResourceDetail] resource: ресурс менеджер
         :param view: название ресурс менеджера
         :param urls: список url, по которым будет доступен данный ресурс
-        :param self_json_api: self json_api
+        :param Api self_json_api: self json_api
         :param kwargs:
         :return:
         """
@@ -117,7 +114,7 @@ class BasePlugin(object):
         :param Dict data: Данные, на основе которых будет создан новый объект
         :param view_kwargs:
         :param List[str] join_fields: список полей, которые являются ссылками на другие модели
-        :param self_json_api:
+        :param Api self_json_api:
         :param kwargs:
         :return: возвращает обновлённый набор данных для нового объекта
         """
@@ -130,14 +127,14 @@ class BasePlugin(object):
         :param args:
         :param data:
         :param view_kwargs:
-        :param self_json_api:
+        :param Api self_json_api:
         :param obj:
         :param kwargs:
         :return:
         """
         raise PluginMethodNotImplementedError
 
-    def data_layer_get_object_update_query(self, *args, query: Query = None, qs: QueryStringManager = None,
+    def data_layer_get_object_update_query(self, *args, query: Query = None, qs: Any = None,
                                            view_kwargs=None, self_json_api=None, **kwargs) -> Query:
         """
         Во время создания запроса к БД на выгрузку объекта. Тут можно пропатчить запрос к БД
@@ -145,13 +142,13 @@ class BasePlugin(object):
         :param Query query: Сформированный запрос к БД
         :param QueryStringManager qs: список параметров для запроса
         :param view_kwargs: список фильтров для запроса
-        :param self_json_api:
+        :param Api self_json_api:
         :param kwargs:
         :return: возвращает пропатченный запрос к бд
         """
         raise PluginMethodNotImplementedError
 
-    def data_layer_get_collection_update_query(self, *args, query: Query = None, qs: QueryStringManager = None,
+    def data_layer_get_collection_update_query(self, *args, query: Query = None, qs: Any = None,
                                                view_kwargs=None, self_json_api=None, **kwargs) -> Query:
         """
         Во время создания запроса к БД на выгрузку объектов. Тут можно пропатчить запрос к БД
@@ -159,7 +156,7 @@ class BasePlugin(object):
         :param Query query: Сформированный запрос к БД
         :param QueryStringManager qs: список параметров для запроса
         :param view_kwargs: список фильтров для запроса
-        :param self_json_api:
+        :param Api self_json_api:
         :param kwargs:
         :return: возвращает пропатченный запрос к бд
         """
@@ -174,20 +171,31 @@ class BasePlugin(object):
         :param obj: Объект, который будет обновлён
         :param view_kwargs:
         :param List[str] join_fields: список полей, которые являются ссылками на другие модели
-        :param self_json_api:
+        :param Api self_json_api:
         :param kwargs:
         :return: возвращает обновлённый набор данных для обновления объекта
         """
         raise PluginMethodNotImplementedError
 
-    def data_layer_delete_object_clean_data(self, *args, obj=None, view_kwargs=None, self_json_api=None, **kwargs) -> None:
+    def data_layer_delete_object_clean_data(self, *args, obj=None, view_kwargs=None, self_json_api=None,
+                                            **kwargs) -> None:
         """
         Выполняется до удаления объекта в БД
         :param args:
         :param obj: удаляемый объект
         :param view_kwargs:
-        :param self_json_api:
+        :param Api self_json_api:
         :param kwargs:
+        :return:
+        """
+        raise PluginMethodNotImplementedError
+
+    def before_data_layers_filtering_alchemy_nested_resolve(self, self_nested: Any) -> Any:
+        """
+        Вызывается до создания фильтра в функции Nested.resolve, если после выполнения вернёт None, то
+        дальше продолжиться работа функции resolve, если вернёт какое либо значения отличное от None, То
+        функция resolve завершается, а результат hook функции передаётся дальше в стеке вызова
+        :param Nested self_nested: instance Nested
         :return:
         """
         raise PluginMethodNotImplementedError

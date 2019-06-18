@@ -1,19 +1,36 @@
-import json
+from typing import Any
+
+from flask_rest_jsonapi.data_layers.filtering.alchemy import deserialize_field
+from marshmallow import Schema
 
 from flask_rest_jsonapi.exceptions import InvalidFilters
-from marshmallow import Schema
-from werkzeug.datastructures import ImmutableMultiDict
-
-from flask_rest_jsonapi.ext.postgresql_jsonb.filtering.alchemy import create_filters
 from flask_rest_jsonapi.ext.postgresql_jsonb.schema import SchemaJSONB
 from flask_rest_jsonapi.marshmallow_fields import Relationship
-from flask_rest_jsonapi.querystring import QueryStringManager
-from sqlalchemy.orm import Query
-
 from flask_rest_jsonapi.plugin import BasePlugin
 
 
 class PostgreSqlJSONB(BasePlugin):
+
+    def before_data_layers_filtering_alchemy_nested_resolve(self, self_nested: Any) -> Any:
+        """
+        Проверяем, если фильтр по jsonb полю, то создаём фильтр и возвращаем результат,
+        если фильтр по другому полю, то возвращаем None
+        :param self_nested:
+        :return:
+        """
+        if not ({'or', 'and', 'not'} & set(self_nested.filter_)):
+
+            if '__' in self_nested.filter_.get('name', ''):
+                if self._isinstance_jsonb(self_nested.schema, self_nested.filter_['name']):
+                    filter = self._create_filter(
+                        self_nested,
+                        marshmallow_field=self_nested.schema._declared_fields[self_nested.name],
+                        model_column=self_nested.column,
+                        operator=self_nested.filter_['op'],
+                        value=self_nested.value
+                    )
+                    return filter, []
+
     @classmethod
     def _isinstance_jsonb(cls, schema: Schema, filter_name):
         """
@@ -35,77 +52,41 @@ class PostgreSqlJSONB(BasePlugin):
         return False
 
     @classmethod
-    def _update_qs_filter(cls, qs: QueryStringManager, new_filters):
+    def _create_filter(cls, self_nested: Any, marshmallow_field, model_column, operator, value):
         """
-        Вычищаем фильтры из qs, которые относятся к JSONB
-        :param QueryStringManager qs:
+        Create sqlalchemy filter
+        :param Nested self_nested:
+        :param marshmallow_field:
+        :param model_column: column sqlalchemy
+        :param operator:
+        :param value:
         :return:
         """
-        new_filters = {
-            i_filter['name']: i_filter
-            for i_filter in new_filters
-        }
-        clear_qs = {}
-        for k, v in qs.qs.items():
-            if k.startswith('filter['):
-                f_name = k[7:-1]
-                if f_name in new_filters:
-                    clear_qs[k] = v
-            elif k.startswith('filter'):
-                list_filters = json.loads(v)
-                new_clear_filter = []
-                for i_filter in list_filters:
-                    if i_filter.get('name') in new_filters:
-                        new_clear_filter.append(i_filter)
-                if new_clear_filter:
-                    clear_qs[k] = json.dumps(new_clear_filter)
-            else:
-                clear_qs[k] = v
-        qs.qs = ImmutableMultiDict(clear_qs)
-        return qs
+        fields = self_nested.filter_['name'].split('__')
+        self_nested.filter_['name'] = '__'.join(fields[:-1])
+        field_in_jsonb = fields[-1]
 
-    @classmethod
-    def _filter_query(cls, query, qs: QueryStringManager, model, self_json_api):
-        """Filter query according to jsonapi 1.0
-
-        :param Query query: sqlalchemy query to sort
-        :param QueryStringManager qs: filter information
-        :param DeclarativeMeta model: an sqlalchemy model
-        :param self_json_api:
-        :return Query: the sorted query
-        """
-        # Вытащим нужные фильтры по полям JSONB, оставшиеся отправим на разбор самой библиотеки
-        filter_for_jsonb = []
-        new_filters = []
-        for i_filter in qs.filters:
-            if i_filter['val'] == '':
-                # Пропускаем фильтры с пустой строкой
-                continue
-            if cls._isinstance_jsonb(self_json_api.resource.schema, i_filter['name']):
-                filter_for_jsonb.append(i_filter)
-            else:
-                new_filters.append(i_filter)
-        cls._update_qs_filter(qs, new_filters)
-
-        filters, joins = create_filters(model, filter_for_jsonb, self_json_api.resource)
-        for i_join in joins:
-            query = query.join(*i_join)
-        query = query.filter(*filters)
-
-        return query
-
-    def data_layer_get_collection_update_query(self, *args, query: Query = None, qs: QueryStringManager = None,
-                                               view_kwargs=None, self_json_api=None, **kwargs) -> Query:
-        """
-        Во время создания запроса к БД на выгрузку объектов. Тут можно пропатчить запрос к БД
-        :param args:
-        :param Query query: Сформированный запрос к БД
-        :param QueryStringManager qs: список параметров для запроса
-        :param view_kwargs: список фильтров для запроса
-        :param self_json_api:
-        :param kwargs:
-        :return: возвращает пропатченный запрос к бд
-        """
-        if qs.filters:
-            query = self._filter_query(query, qs, self_json_api.model, self_json_api=self_json_api)
-        return query
+        if not isinstance(getattr(marshmallow_field, 'schema', None), SchemaJSONB):
+            raise InvalidFilters(f'Invalid JSONB filter: {"__".join(self_nested.fields)}')
+        marshmallow_field = marshmallow_field.schema._declared_fields[field_in_jsonb]
+        if hasattr(marshmallow_field, f'_{operator}_sql_filter_'):
+            """
+            У marshmallow field может быть реализована своя логика создания фильтра для sqlalchemy
+            для определённого оператора. Чтобы реализовать свою логику создания фильтра для определённого оператора
+            необходимо реализовать в классе поля методы (название метода строится по следующему принципу
+            `_<тип оператора>_sql_filter_`). Также такой метод должен принимать ряд параметров 
+            * marshmallow_field - объект класса поля marshmallow
+            * model_column - объект класса поля sqlalchemy
+            * value - значения для фильтра
+            * operator - сам оператор, например: "eq", "in"...
+            """
+            return getattr(marshmallow_field, f'_{operator}_sql_filter_')(
+                marshmallow_field=marshmallow_field,
+                model_column=model_column.op('->>')(field_in_jsonb),
+                value=value,
+                operator=self_nested.operator
+            )
+        # Нужно проводить валидацию и делать десериализацию значение указанных в фильтре, так как поля Enum
+        # например выгружаются как 'name_value(str)', а в БД хранится как просто число
+        value = deserialize_field(marshmallow_field, value)
+        return getattr(model_column.op('->>')(field_in_jsonb), self_nested.operator)(value)

@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 
 """Helper to create sqlalchemy filters according to filter querystring parameter"""
-from marshmallow import fields
-from sqlalchemy import and_, or_, not_, sql
-from sqlalchemy.orm import aliased, util, attributes
 from typing import Any, List, Tuple
 
-from flask_rest_jsonapi.exceptions import InvalidFilters
+from marshmallow import fields, ValidationError
+from sqlalchemy import and_, or_, not_, sql
+from sqlalchemy.orm import aliased
+
+from flask_rest_jsonapi.exceptions import InvalidFilters, PluginMethodNotImplementedError
 from flask_rest_jsonapi.schema import get_relationships, get_model_field
 
 Filter = sql.elements.BinaryExpression
@@ -31,9 +32,14 @@ def deserialize_field(marshmallow_field: fields.Field, value: Any) -> Any:
     :param value: значение, которое прищло для фильтра
     :return: сериализованное значение
     """
-    if isinstance(value, list) and type(marshmallow_field) in STANDARD_MARSHMALLOW_FIELDS:
-        return [marshmallow_field.deserialize(i_value) for i_value in value]
-    return marshmallow_field.deserialize(value)
+    try:
+        if isinstance(value, list) and type(marshmallow_field) in STANDARD_MARSHMALLOW_FIELDS:
+            return [marshmallow_field.deserialize(i_value) for i_value in value]
+        elif not isinstance(value, list) and isinstance(marshmallow_field, fields.List):
+            return marshmallow_field.deserialize([value])
+        return marshmallow_field.deserialize(value)
+    except ValidationError:
+        raise InvalidFilters(f'Bad filter value: {value}')
 
 
 def create_filters(model, filter_info, resource):
@@ -103,11 +109,30 @@ class Node(object):
 
     def resolve(self) -> FilterAndJoins:
         """Create filter for a particular node of the filter tree"""
+        for i_plugins in self.resource.plugins:
+            try:
+                res = i_plugins.before_data_layers_filtering_alchemy_nested_resolve(self)
+                if res is not None:
+                    return res
+            except PluginMethodNotImplementedError:
+                pass
         if 'or' not in self.filter_ and 'and' not in self.filter_ and 'not' not in self.filter_:
             value = self.value
 
+            if isinstance(value, dict):
+                alias = aliased(self.related_model)
+                joins = [[alias, self.column]]
+                filters, new_joins = Node(self.related_model, value, self.resource, self.related_schema).resolve()
+
+                joins.extend(new_joins)
+                return filters, joins
+
             if '__' in self.filter_.get('name', ''):
-                value = {'name': '__'.join(self.filter_['name'].split('__')[1:]), 'op': self.filter_['op'],'val': value}
+                value = {
+                    'name': '__'.join(self.filter_['name'].split('__')[1:]),
+                    'op': self.filter_['op'],
+                    'val': value
+                }
                 alias = aliased(self.related_model)
                 joins = [[alias, self.column]]
                 node = Node(alias, value, self.resource, self.related_schema)
