@@ -2,8 +2,10 @@ import datetime
 from decimal import Decimal
 from typing import Any
 
+import sqlalchemy
 from sqlalchemy import cast, String, Integer, Boolean, DECIMAL
 from sqlalchemy.sql.elements import or_
+from sqlalchemy.sql.operators import desc_op, asc_op
 
 from flask_rest_jsonapi.data_layers.filtering.alchemy import deserialize_field
 from marshmallow import Schema, fields as ma_fields
@@ -24,6 +26,24 @@ def is_seq_collection(obj):
 
 
 class PostgreSqlJSONB(BasePlugin):
+
+    def before_data_layers_sorting_alchemy_nested_resolve(self, self_nested: Any) -> Any:
+        """
+        Вызывается до создания сортировки в функции Nested.resolve, если после выполнения вернёт None, то
+        дальше продолжиться работа функции resolve, если вернёт какое либо значения отличное от None, То
+        функция resolve завершается, а результат hook функции передаётся дальше в стеке вызова
+        :param Nested self_nested: instance Nested
+        :return:
+        """
+        if '__' in self_nested.sort_.get('field', ''):
+            if self._isinstance_jsonb(self_nested.schema, self_nested.sort_['field']):
+                sort = self._create_sort(
+                    self_nested,
+                    marshmallow_field=self_nested.schema._declared_fields[self_nested.name],
+                    model_column=self_nested.column,
+                    order=self_nested.sort_['order']
+                )
+                return sort, []
 
     def before_data_layers_filtering_alchemy_nested_resolve(self, self_nested: Any) -> Any:
         """
@@ -64,6 +84,62 @@ class PostgreSqlJSONB(BasePlugin):
             else:
                 return False
         return False
+
+    @classmethod
+    def _create_sort(cls, self_nested: Any, marshmallow_field, model_column, order):
+        """
+        Create sqlalchemy sort
+        :param Nested self_nested:
+        :param marshmallow_field:
+        :param model_column: column sqlalchemy
+        :param str order: asc | desc
+        :return:
+        """
+        fields = self_nested.sort_['field'].split('__')
+        self_nested.sort_['field'] = '__'.join(fields[:-1])
+        field_in_jsonb = fields[-1]
+
+        if not isinstance(getattr(marshmallow_field, 'schema', None), SchemaJSONB):
+            raise InvalidFilters(f'Invalid JSONB sort: {"__".join(self_nested.fields)}')
+        marshmallow_field = marshmallow_field.schema._declared_fields[field_in_jsonb]
+        if hasattr(marshmallow_field, f'_{order}_sql_filter_'):
+            """
+            У marshmallow field может быть реализована своя логика создания сортировки для sqlalchemy
+            для определённого типа ('asc', 'desc'). Чтобы реализовать свою логику создания сортировка для 
+            определённого оператора необходимо реализовать в классе поля методы (название метода строится по 
+            следующему принципу `_<тип сортировки>_sql_filter_`). Также такой метод должен принимать ряд параметров 
+            * marshmallow_field - объект класса поля marshmallow
+            * model_column - объект класса поля sqlalchemy
+            """
+            return getattr(marshmallow_field, f'_{order}_sql_filter_')(
+                marshmallow_field=marshmallow_field,
+                model_column=model_column
+            )
+        mapping_ma_field_to_type = {v: k for k, v in self_nested.schema.TYPE_MAPPING.items()}
+        mapping_ma_field_to_type[ma_fields.Email] = str
+        mapping_ma_field_to_type[ma_fields.Dict] = dict
+        mapping_ma_field_to_type[ma_fields.List] = list
+        mapping_ma_field_to_type[ma_fields.Decimal] = Decimal
+        mapping_ma_field_to_type[ma_fields.Url] = str
+        mapping_ma_field_to_type[ma_fields.LocalDateTime] = datetime.datetime
+        mapping_type_to_sql_type = {
+            str: String,
+            bytes: String,
+            Decimal: DECIMAL,
+            int: Integer,
+            bool: Boolean
+        }
+
+        property_type = mapping_ma_field_to_type[type(marshmallow_field)]
+        extra_field = model_column.op('->>')(field_in_jsonb)
+        sort = ''
+        order_op = desc_op if order == 'desc' else asc_op
+        if property_type in mapping_type_to_sql_type:
+            if sqlalchemy.__version__ >= '1.1':
+                sort = order_op(extra_field.astext.cast(mapping_type_to_sql_type[property_type]))
+            else:
+                sort = order_op(extra_field.cast(mapping_type_to_sql_type[property_type]))
+        return sort
 
     @classmethod
     def _create_filter(cls, self_nested: Any, marshmallow_field, model_column, operator, value):
