@@ -199,3 +199,13 @@ class BasePlugin(object):
         :return:
         """
         raise PluginMethodNotImplementedError
+
+    def before_data_layers_sorting_alchemy_nested_resolve(self, self_nested: Any) -> Any:
+        """
+        Вызывается до создания сортировки в функции Nested.resolve, если после выполнения вернёт None, то
+        дальше продолжиться работа функции resolve, если вернёт какое либо значения отличное от None, То
+        функция resolve завершается, а результат hook функции передаётся дальше в стеке вызова
+        :param Nested self_nested: instance Nested
+        :return:
+        """
+        raise PluginMethodNotImplementedError

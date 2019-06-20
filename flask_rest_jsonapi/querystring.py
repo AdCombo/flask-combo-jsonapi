@@ -173,11 +173,12 @@ class QueryStringManager(object):
             sorting_results = []
             for sort_field in self.qs['sort'].split(','):
                 field = sort_field.replace('-', '')
-                if field not in self.schema._declared_fields:
-                    raise InvalidSort("{} has no attribute {}".format(self.schema.__name__, field))
-                if field in get_relationships(self.schema):
-                    raise InvalidSort("You can't sort on {} because it is a relationship field".format(field))
-                field = get_model_field(self.schema, field)
+                if '__' not in field:
+                    if field not in self.schema._declared_fields:
+                        raise InvalidSort("{} has no attribute {}".format(self.schema.__name__, field))
+                    if field in get_relationships(self.schema):
+                        raise InvalidSort("You can't sort on {} because it is a relationship field".format(field))
+                    field = get_model_field(self.schema, field)
                 order = 'desc' if sort_field.startswith('-') else 'asc'
                 sorting_results.append({'field': field, 'order': order})
             return sorting_results

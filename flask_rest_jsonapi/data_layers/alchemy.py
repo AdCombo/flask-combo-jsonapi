@@ -12,6 +12,7 @@ from marshmallow.base import SchemaABC
 
 from flask import current_app
 from flask_rest_jsonapi.data_layers.base import BaseDataLayer
+from flask_rest_jsonapi.data_layers.sorting.alchemy import create_sorts
 from flask_rest_jsonapi.exceptions import RelationNotFound, RelatedObjectNotFound, JsonApiException, \
     InvalidSort, ObjectNotFound, InvalidInclude, InvalidType, PluginMethodNotImplementedError
 from flask_rest_jsonapi.data_layers.filtering.alchemy import create_filters
@@ -567,11 +568,12 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :param list sort_info: sort information
         :return Query: the sorted query
         """
-        for sort_opt in sort_info:
-            field = sort_opt['field']
-            if not hasattr(self.model, field):
-                raise InvalidSort("{} has no attribute {}".format(self.model.__name__, field))
-            query = query.order_by(getattr(getattr(self.model, field), sort_opt['order'])())
+        if sort_info:
+            sorts, joins = create_sorts(self.model, sort_info, self.resource)
+            for i_join in joins:
+                query = query.join(*i_join)
+            for i_sort in sorts:
+                query = query.order_by(i_sort)
         return query
 
     def paginate_query(self, query, paginate_info):
