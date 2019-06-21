@@ -47,7 +47,7 @@ API для плагинов
 
 :code:`after_route(self, resource: Union[ResourceList, ResourceDetail] = None, view=None, urls: Tuple[str] = None, self_json_api: Api = None, **kwargs) -> None:`
 
-    Постбработка ресурс менеджеров после создания роутера
+    Постобработка ресурс менеджеров после создания роутера
 
     - :code:`resource` - ресурс менеджер
     - :code:`view` - название ресурс менеджера
@@ -56,28 +56,28 @@ API для плагинов
 
 :code:`after_init_schema_in_resource_list_post(self, *args, schema=None, model=None, **kwargs) -> None`
 
-    Выполняется после иницциализация marshmallow схемы в ResourceList.post
+    Выполняется после инициализация marshmallow схемы в ResourceList.post
 
     - :code:`schema` - схема, которая привязана к ресурсу для сериализации/десериализации
     - :code:`model` - модель, которая привязана к ресурсу
 
 :code:`after_init_schema_in_resource_list_get(self, *args, schema=None, model=None, **kwargs) -> None`
 
-    Выполняется после иницциализация marshmallow схемы в ResourceList.get
+    Выполняется после инициализация marshmallow схемы в ResourceList.get
 
     - :code:`schema` - схема, которая привязана к ресурсу для сериализации/десериализации
     - :code:`model` - модель, которая привязана к ресурсу
 
 :code:`after_init_schema_in_resource_detail_get(self, *args, schema=None, model=None, **kwargs) -> None`
 
-    Выполняется после иницциализация marshmallow схемы в ResourceDetail.get
+    Выполняется после инициализация marshmallow схемы в ResourceDetail.get
 
     - :code:`schema` - схема, которая привязана к ресурсу для сериализации/десериализации
     - :code:`model` - модель, которая привязана к ресурсу
 
 :code:`after_init_schema_in_resource_detail_patch(self, *args, schema=None, model=None, **kwargs) -> None`
 
-    Выполняется после иницциализация marshmallow схемы в ResourceDetail.patch
+    Выполняется после инициализация marshmallow схемы в ResourceDetail.patch
 
     - :code:`schema` - схема, которая привязана к ресурсу для сериализации/десериализации
     - :code:`model` - модель, которая привязана к ресурсу
@@ -166,7 +166,7 @@ API для плагинов
 
 Пример создания плагинов
 ~~~~~~~~~~~~~~~~~~~~~~~~
-Рассмотим пример реализации плагина, который будет отдавать данные в get запросах для :code:`ResourceList`, :code:`ResourceDetail`
+Рассмотрим пример реализации плагина, который будет отдавать данные в get запросах для :code:`ResourceList`, :code:`ResourceDetail`
 в двух вариантах либо все, либо укороченные по заранее заданному параметру :code:`format=short|full`
 
 .. code:: python
