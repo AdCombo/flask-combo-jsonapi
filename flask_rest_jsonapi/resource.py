@@ -4,7 +4,6 @@
 
 import inspect
 import json
-from six import with_metaclass
 
 from werkzeug.wrappers import Response
 from flask import request, url_for, make_response
@@ -15,7 +14,7 @@ from marshmallow import ValidationError
 
 from flask_rest_jsonapi.querystring import QueryStringManager as QSManager
 from flask_rest_jsonapi.pagination import add_pagination_links
-from flask_rest_jsonapi.exceptions import InvalidType, BadRequest, RelationNotFound
+from flask_rest_jsonapi.exceptions import InvalidType, BadRequest, RelationNotFound, PluginMethodNotImplementedError
 from flask_rest_jsonapi.decorators import check_headers, check_method_requirements, jsonapi_exception_formatter
 from flask_rest_jsonapi.schema import compute_schema, get_relationships, get_model_field
 from flask_rest_jsonapi.data_layers.base import BaseDataLayer
@@ -28,7 +27,7 @@ class ResourceMeta(MethodViewType):
 
     def __new__(cls, name, bases, d):
         """Constructor of a resource class"""
-        rv = super(ResourceMeta, cls).__new__(cls, name, bases, d)
+        rv = super().__new__(cls, name, bases, d)
         if 'data_layer' in d:
             if not isinstance(d['data_layer'], dict):
                 raise Exception("You must provide a data layer information as dict in {}".format(cls.__name__))
@@ -46,6 +45,8 @@ class ResourceMeta(MethodViewType):
         if 'decorators' in d:
             rv.decorators += d['decorators']
 
+        rv.plugins = d.get('plugins', [])
+
         return rv
 
 
@@ -57,7 +58,7 @@ class Resource(MethodView):
         if hasattr(cls, '_data_layer'):
             cls._data_layer.resource = cls
 
-        return super(Resource, cls).__new__(cls)
+        return super().__new__(cls)
 
     @jsonapi_exception_formatter
     def dispatch_request(self, *args, **kwargs):
@@ -106,7 +107,7 @@ class Resource(MethodView):
         return make_response(json_reponse, status_code, headers)
 
 
-class ResourceList(with_metaclass(ResourceMeta, Resource)):
+class ResourceList(Resource, metaclass=ResourceMeta):
     """Base class of a resource list manager"""
 
     @check_method_requirements
@@ -128,7 +129,14 @@ class ResourceList(with_metaclass(ResourceMeta, Resource)):
                                 qs,
                                 qs.include)
 
-        result = schema.dump(objects).data
+        for i_plugins in self.plugins:
+            try:
+                i_plugins.after_init_schema_in_resource_list_get(*args, schema=schema, model=self.data_layer['model'],
+                                                                 **kwargs)
+            except PluginMethodNotImplementedError:
+                pass
+
+        result = schema.dump(objects)
 
         view_kwargs = request.view_args if getattr(self, 'view_kwargs', None) is True else dict()
         add_pagination_links(result,
@@ -154,8 +162,15 @@ class ResourceList(with_metaclass(ResourceMeta, Resource)):
                                 qs,
                                 qs.include)
 
+        for i_plugins in self.plugins:
+            try:
+                i_plugins.after_init_schema_in_resource_list_post(*args, schema=schema, model=self.data_layer['model'],
+                                                                  **kwargs)
+            except PluginMethodNotImplementedError:
+                pass
+
         try:
-            data, errors = schema.load(json_data)
+            data = schema.load(json_data)
         except IncorrectTypeError as e:
             errors = e.messages
             for error in errors['errors']:
@@ -169,17 +184,11 @@ class ResourceList(with_metaclass(ResourceMeta, Resource)):
                 message['title'] = "Validation error"
             return errors, 422
 
-        if errors:
-            for error in errors['errors']:
-                error['status'] = "422"
-                error['title'] = "Validation error"
-            return errors, 422
-
         self.before_post(args, kwargs, data=data)
 
         obj = self.create_object(data, kwargs)
 
-        result = schema.dump(obj).data
+        result = schema.dump(obj)
 
         if result['data'].get('links', {}).get('self'):
             final_result = (result, 201, {'Location': result['data']['links']['self']})
@@ -216,7 +225,7 @@ class ResourceList(with_metaclass(ResourceMeta, Resource)):
         return self._data_layer.create_object(data, kwargs)
 
 
-class ResourceDetail(with_metaclass(ResourceMeta, Resource)):
+class ResourceDetail(Resource, metaclass=ResourceMeta):
     """Base class of a resource detail manager"""
 
     @check_method_requirements
@@ -235,7 +244,14 @@ class ResourceDetail(with_metaclass(ResourceMeta, Resource)):
                                 qs,
                                 qs.include)
 
-        result = schema.dump(obj).data
+        for i_plugins in self.plugins:
+            try:
+                i_plugins.after_init_schema_in_resource_detail_get(*args, schema=schema, model=self.data_layer['model'],
+                                                                   **kwargs)
+            except PluginMethodNotImplementedError:
+                pass
+
+        result = schema.dump(obj)
 
         final_result = self.after_get(result)
 
@@ -257,8 +273,15 @@ class ResourceDetail(with_metaclass(ResourceMeta, Resource)):
                                 qs,
                                 qs.include)
 
+        for i_plugins in self.plugins:
+            try:
+                i_plugins.after_init_schema_in_resource_detail_patch(*args, schema=schema, model=self.data_layer['model'],
+                                                                     **kwargs)
+            except PluginMethodNotImplementedError:
+                pass
+
         try:
-            data, errors = schema.load(json_data)
+            data = schema.load(json_data)
         except IncorrectTypeError as e:
             errors = e.messages
             for error in errors['errors']:
@@ -272,12 +295,6 @@ class ResourceDetail(with_metaclass(ResourceMeta, Resource)):
                 message['title'] = "Validation error"
             return errors, 422
 
-        if errors:
-            for error in errors['errors']:
-                error['status'] = "422"
-                error['title'] = "Validation error"
-            return errors, 422
-
         if 'id' not in json_data['data']:
             raise BadRequest('Missing id in "data" node',
                              source={'pointer': '/data/id'})
@@ -289,7 +306,7 @@ class ResourceDetail(with_metaclass(ResourceMeta, Resource)):
 
         obj = self.update_object(data, qs, kwargs)
 
-        result = schema.dump(obj).data
+        result = schema.dump(obj)
 
         final_result = self.after_patch(result)
 
@@ -349,7 +366,7 @@ class ResourceDetail(with_metaclass(ResourceMeta, Resource)):
         self._data_layer.delete_object(obj, kwargs)
 
 
-class ResourceRelationship(with_metaclass(ResourceMeta, Resource)):
+class ResourceRelationship(Resource, metaclass=ResourceMeta):
     """Base class of a resource relationship manager"""
 
     @check_method_requirements
@@ -373,7 +390,7 @@ class ResourceRelationship(with_metaclass(ResourceMeta, Resource)):
             schema = compute_schema(self.schema, dict(), qs, qs.include)
 
             serialized_obj = schema.dump(obj)
-            result['included'] = serialized_obj.data.get('included', dict())
+            result['included'] = serialized_obj.get('included', dict())
 
         final_result = self.after_get(result)
 

@@ -105,3 +105,11 @@ class AccessDenied(JsonApiException):
 
     title = 'Access denied'
     status = '403'
+
+
+class JsonApiPluginException(Exception):
+    """Base class for all JsonApi in plugin-related errors."""
+
+
+class PluginMethodNotImplementedError(JsonApiPluginException, NotImplementedError):
+    """Raised when calling an unimplemented helper method in a plugin"""

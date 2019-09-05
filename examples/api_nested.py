@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from flask import Flask
 from flask_rest_jsonapi import Api, ResourceDetail, ResourceList, ResourceRelationship
 from flask_rest_jsonapi.exceptions import ObjectNotFound

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """This module contains the main class of the Api to initialize the Api, plug default decorators for each resources
 methods, speficy which blueprint to use, define the Api routes and plug additional oauth manager and permission manager
 """
@@ -9,14 +7,15 @@ from functools import wraps
 
 from flask import request, abort
 
-from flask_rest_jsonapi.resource import ResourceList, ResourceRelationship
 from flask_rest_jsonapi.decorators import jsonapi_exception_formatter
+from flask_rest_jsonapi.exceptions import PluginMethodNotImplementedError
+from flask_rest_jsonapi.resource import ResourceList, ResourceRelationship
 
 
 class Api(object):
     """The main class of the Api"""
 
-    def __init__(self, app=None, blueprint=None, decorators=None):
+    def __init__(self, app=None, blueprint=None, decorators=None, plugins=None):
         """Initialize an instance of the Api
 
         :param app: the flask application
@@ -24,10 +23,12 @@ class Api(object):
         :param tuple decorators: a tuple of decorators plugged to each resource methods
         """
         self.app = app
+        self._app = app
         self.blueprint = blueprint
         self.resources = []
         self.resource_registry = []
         self.decorators = decorators or tuple()
+        self.plugins = plugins if plugins is not None else []
 
         if app is not None:
             self.init_app(app, blueprint)
@@ -36,6 +37,8 @@ class Api(object):
         """Update flask application with our api
 
         :param Application app: a flask application
+        :param blueprint:
+        :param additional_blueprints:
         """
         if app is not None:
             self.app = app
@@ -58,14 +61,27 @@ class Api(object):
 
         self.app.config.setdefault('PAGE_SIZE', 30)
 
+        for i_plugins in self.plugins:
+            try:
+                i_plugins.after_init_plugin(app=None, blueprint=None, additional_blueprints=None)
+            except PluginMethodNotImplementedError:
+                pass
+
     def route(self, resource, view, *urls, **kwargs):
         """Create an api view.
 
         :param Resource resource: a resource class inherited from flask_rest_jsonapi.resource.Resource
         :param str view: the view name
-        :param list urls: the urls of the view
-        :param dict kwargs: additional options of the route
+        :param str urls: the urls of the view
+        :param kwargs: additional options of the route
         """
+        for i_plugins in self.plugins:
+            try:
+                i_plugins.before_route(resource=resource, view=view, urls=urls, self_json_api=self, **kwargs)
+            except PluginMethodNotImplementedError:
+                pass
+        setattr(resource, 'plugins', self.plugins)
+
         resource.view = view
         url_rule_options = kwargs.get('url_rule_options') or dict()
 
@@ -89,6 +105,12 @@ class Api(object):
                                    'url_rule_options': url_rule_options})
 
         self.resource_registry.append(resource)
+
+        for i_plugins in self.plugins:
+            try:
+                i_plugins.after_route(resource=resource, view=view, urls=urls, self_json_api=self, **kwargs)
+            except PluginMethodNotImplementedError:
+                pass
 
     def oauth_manager(self, oauth_manager):
         """Use the oauth manager to enable oauth for API

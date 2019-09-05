@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Decorators to check headers and method requirements for each Api calls"""
 
 import json
