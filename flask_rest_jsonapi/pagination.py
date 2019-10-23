@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Helper to create pagination links according to jsonapi specification"""
 
 from __future__ import division

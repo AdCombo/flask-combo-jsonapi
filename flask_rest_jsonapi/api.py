@@ -61,9 +61,9 @@ class Api(object):
 
         self.app.config.setdefault('PAGE_SIZE', 30)
 
-        for i_plugins in self.plugins:
+        for i_plugin in self.plugins:
             try:
-                i_plugins.after_init_plugin(app=None, blueprint=None, additional_blueprints=None)
+                i_plugin.after_init_plugin(app=None, blueprint=None, additional_blueprints=None)
             except PluginMethodNotImplementedError:
                 pass
 
@@ -75,9 +75,9 @@ class Api(object):
         :param str urls: the urls of the view
         :param kwargs: additional options of the route
         """
-        for i_plugins in self.plugins:
+        for i_plugin in self.plugins:
             try:
-                i_plugins.before_route(resource=resource, view=view, urls=urls, self_json_api=self, **kwargs)
+                i_plugin.before_route(resource=resource, view=view, urls=urls, self_json_api=self, **kwargs)
             except PluginMethodNotImplementedError:
                 pass
         setattr(resource, 'plugins', self.plugins)
@@ -106,9 +106,9 @@ class Api(object):
 
         self.resource_registry.append(resource)
 
-        for i_plugins in self.plugins:
+        for i_plugin in self.plugins:
             try:
-                i_plugins.after_route(resource=resource, view=view, urls=urls, self_json_api=self, **kwargs)
+                i_plugin.after_route(resource=resource, view=view, urls=urls, self_json_api=self, **kwargs)
             except PluginMethodNotImplementedError:
                 pass
 

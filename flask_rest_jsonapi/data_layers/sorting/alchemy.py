@@ -7,6 +7,8 @@ from sqlalchemy.orm import aliased
 
 from flask_rest_jsonapi.exceptions import InvalidFilters, PluginMethodNotImplementedError, InvalidSort
 from flask_rest_jsonapi.schema import get_relationships, get_model_field
+from flask_rest_jsonapi.utils import SPLIT_REL
+
 
 Sort = sql.elements.BinaryExpression
 Join = List[Any]
@@ -128,9 +130,9 @@ class Node(object):
         if not hasattr(self.model, field):
             raise InvalidSort("{} has no attribute {}".format(self.model.__name__, field))
 
-        if '__' in self.sort_.get('field', ''):
+        if SPLIT_REL in self.sort_.get('field', ''):
             value = {
-                'field': '__'.join(self.sort_['field'].split('__')[1:]),
+                'field': SPLIT_REL.join(self.sort_['field'].split(SPLIT_REL)[1:]),
                 'order': self.sort_['order']
             }
             alias = aliased(self.related_model)
@@ -157,8 +159,8 @@ class Node(object):
         if name is None:
             raise InvalidFilters("Can't find name of a sort")
 
-        if '__' in name:
-            name = name.split('__')[0]
+        if SPLIT_REL in name:
+            name = name.split(SPLIT_REL)[0]
 
         if name not in self.schema._declared_fields:
             raise InvalidFilters("{} has no attribute {}".format(self.schema.__name__, name))

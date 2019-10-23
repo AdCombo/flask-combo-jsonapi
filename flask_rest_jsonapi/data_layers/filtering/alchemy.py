@@ -7,6 +7,8 @@ from sqlalchemy.orm import aliased
 
 from flask_rest_jsonapi.exceptions import InvalidFilters, PluginMethodNotImplementedError
 from flask_rest_jsonapi.schema import get_relationships, get_model_field
+from flask_rest_jsonapi.utils import SPLIT_REL
+
 
 Filter = sql.elements.BinaryExpression
 Join = List[Any]
@@ -142,9 +144,9 @@ class Node(object):
                 joins.extend(new_joins)
                 return filters, joins
 
-            if '__' in self.filter_.get('name', ''):
+            if SPLIT_REL in self.filter_.get('name', ''):
                 value = {
-                    'name': '__'.join(self.filter_['name'].split('__')[1:]),
+                    'name': SPLIT_REL.join(self.filter_['name'].split(SPLIT_REL)[1:]),
                     'op': self.filter_['op'],
                     'val': value
                 }
@@ -194,8 +196,8 @@ class Node(object):
         if name is None:
             raise InvalidFilters("Can't find name of a filter")
 
-        if '__' in name:
-            name = name.split('__')[0]
+        if SPLIT_REL in name:
+            name = name.split(SPLIT_REL)[0]
 
         if name not in self.schema._declared_fields:
             raise InvalidFilters("{} has no attribute {}".format(self.schema.__name__, name))

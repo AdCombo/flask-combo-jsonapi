@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Helper to deal with querystring parameters according to jsonapi specification"""
 
 import json
@@ -8,6 +6,7 @@ from flask import current_app
 
 from flask_rest_jsonapi.exceptions import BadRequest, InvalidFilters, InvalidSort, InvalidField, InvalidInclude
 from flask_rest_jsonapi.schema import get_model_field, get_relationships, get_schema_from_type
+from flask_rest_jsonapi.utils import SPLIT_REL
 
 
 class QueryStringManager(object):
@@ -173,7 +172,7 @@ class QueryStringManager(object):
             sorting_results = []
             for sort_field in self.qs['sort'].split(','):
                 field = sort_field.replace('-', '')
-                if '__' not in field:
+                if SPLIT_REL not in field:
                     if field not in self.schema._declared_fields:
                         raise InvalidSort("{} has no attribute {}".format(self.schema.__name__, field))
                     if field in get_relationships(self.schema):
@@ -195,7 +194,7 @@ class QueryStringManager(object):
 
         if current_app.config.get('MAX_INCLUDE_DEPTH') is not None:
             for include_path in include_param:
-                if len(include_path.split('.')) > current_app.config['MAX_INCLUDE_DEPTH']:
+                if len(include_path.split(SPLIT_REL)) > current_app.config['MAX_INCLUDE_DEPTH']:
                     raise InvalidInclude("You can't use include through more than {} relationships"
                                          .format(current_app.config['MAX_INCLUDE_DEPTH']))
 

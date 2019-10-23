@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """This module contains the logic of resource management"""
 
 import inspect

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Helpers to deal with marshmallow schemas"""
 
 from marshmallow import class_registry
@@ -7,6 +5,7 @@ from marshmallow.base import SchemaABC
 from marshmallow_jsonapi.fields import Relationship, List, Nested
 
 from flask_rest_jsonapi.exceptions import InvalidInclude
+from flask_rest_jsonapi.utils import SPLIT_REL
 
 
 def compute_schema(schema_cls, default_kwargs, qs, include):
@@ -28,7 +27,7 @@ def compute_schema(schema_cls, default_kwargs, qs, include):
 
     if include:
         for include_path in include:
-            field = include_path.split('.')[0]
+            field = include_path.split(SPLIT_REL)[0]
 
             if field not in schema_cls._declared_fields:
                 raise InvalidInclude("{} has no attribute {}".format(schema_cls.__name__, field))
@@ -38,8 +37,8 @@ def compute_schema(schema_cls, default_kwargs, qs, include):
             schema_kwargs['include_data'] += (field, )
             if field not in related_includes:
                 related_includes[field] = []
-            if '.' in include_path:
-                related_includes[field] += ['.'.join(include_path.split('.')[1:])]
+            if SPLIT_REL in include_path:
+                related_includes[field] += [SPLIT_REL.join(include_path.split(SPLIT_REL)[1:])]
 
     # make sure id field is in only parameter unless marshamllow will raise an Exception
     if schema_kwargs.get('only') is not None and 'id' not in schema_kwargs['only']:
@@ -62,7 +61,7 @@ def compute_schema(schema_cls, default_kwargs, qs, include):
     # manage compound documents
     if include:
         for include_path in include:
-            field = include_path.split('.')[0]
+            field = include_path.split(SPLIT_REL)[0]
             relation_field = schema.declared_fields[field]
             related_schema_cls = schema.declared_fields[field].__dict__['_Relationship__schema']
             related_schema_kwargs = {}

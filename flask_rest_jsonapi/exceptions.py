@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Collection of useful http error for the Api"""
 
 

@@ -15,6 +15,7 @@ from flask_rest_jsonapi.exceptions import RelationNotFound, RelatedObjectNotFoun
     InvalidSort, ObjectNotFound, InvalidInclude, InvalidType, PluginMethodNotImplementedError
 from flask_rest_jsonapi.data_layers.filtering.alchemy import create_filters
 from flask_rest_jsonapi.schema import get_model_field, get_related_schema, get_relationships, get_nested_fields, get_schema_field
+from flask_rest_jsonapi.utils import SPLIT_REL
 
 
 class SqlalchemyDataLayer(BaseDataLayer):
@@ -602,9 +603,9 @@ class SqlalchemyDataLayer(BaseDataLayer):
         for include in qs.include:
             joinload_object = None
 
-            if '.' in include:
+            if SPLIT_REL in include:
                 current_schema = self.resource.schema
-                for obj in include.split('.'):
+                for obj in include.split(SPLIT_REL):
                     try:
                         field = get_model_field(current_schema, obj)
                     except Exception as e:

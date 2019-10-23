@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Helper to  format Api errors according to jsonapi specification"""
 
 

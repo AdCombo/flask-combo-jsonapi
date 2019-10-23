@@ -1,8 +1,13 @@
-# -*- coding: utf-8 -*-
-
 import json
 from uuid import UUID
 from datetime import datetime
+
+
+"""
+Splitter for filters, sorts and includes
+Previously used: '__'
+"""
+SPLIT_REL = '.'
 
 
 class JSONEncoder(json.JSONEncoder):
