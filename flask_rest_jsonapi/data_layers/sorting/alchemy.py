@@ -126,13 +126,13 @@ class Node(object):
                 except PluginMethodNotImplementedError:
                     pass
 
-        field = self.sort_['field']
-        if not hasattr(self.model, field):
+        field = self.sort_.get('field', '')
+        if not hasattr(self.model, field) and SPLIT_REL not in field:
             raise InvalidSort("{} has no attribute {}".format(self.model.__name__, field))
 
-        if SPLIT_REL in self.sort_.get('field', ''):
+        if SPLIT_REL in field:
             value = {
-                'field': SPLIT_REL.join(self.sort_['field'].split(SPLIT_REL)[1:]),
+                'field': SPLIT_REL.join(field.split(SPLIT_REL)[1:]),
                 'order': self.sort_['order']
             }
             alias = aliased(self.related_model)
