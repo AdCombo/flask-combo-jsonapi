@@ -1,10 +1,10 @@
 """Helper to create sqlalchemy filters according to filter querystring parameter"""
 from typing import Any, List, Tuple
 
-from marshmallow import fields, ValidationError
 from sqlalchemy import and_, or_, not_, sql
 from sqlalchemy.orm import aliased
 
+from flask_rest_jsonapi.data_layers.shared import deserialize_field, create_filters_or_sorts
 from flask_rest_jsonapi.exceptions import InvalidFilters, PluginMethodNotImplementedError
 from flask_rest_jsonapi.schema import get_relationships, get_model_field
 from flask_rest_jsonapi.utils import SPLIT_REL
@@ -18,44 +18,6 @@ FilterAndJoins = Tuple[
     List[Join],
 ]
 
-# These fields cannot be arrays
-STANDARD_MARSHMALLOW_FIELDS = {
-    fields.Dict,
-    fields.Tuple,
-    fields.String,
-    fields.UUID,
-    fields.Number,
-    fields.Integer,
-    fields.Decimal,
-    fields.Boolean,
-    fields.Float,
-    fields.DateTime,
-    fields.Date,
-    fields.TimeDelta,
-    fields.Url,
-    fields.Str,
-    fields.Bool,
-    fields.Int,
-    fields.Constant,
-}
-
-
-def deserialize_field(marshmallow_field: fields.Field, value: Any) -> Any:
-    """
-    Десериализуем значение, которое приходит в фильтре
-    :param marshmallow_field: тип marshmallow поля
-    :param value: значение, которое прищло для фильтра
-    :return: сериализованное значение
-    """
-    try:
-        if isinstance(value, list) and type(marshmallow_field) in STANDARD_MARSHMALLOW_FIELDS:
-            return [marshmallow_field.deserialize(i_value) for i_value in value]
-        elif not isinstance(value, list) and isinstance(marshmallow_field, fields.List):
-            return marshmallow_field.deserialize([value])
-        return marshmallow_field.deserialize(value)
-    except ValidationError:
-        raise InvalidFilters(f'Bad filter value: {value}')
-
 
 def create_filters(model, filter_info, resource):
     """Apply filters from filters information to base query
@@ -64,15 +26,7 @@ def create_filters(model, filter_info, resource):
     :param dict filter_info: current node filter information
     :param Resource resource: the resource
     """
-    filters = []
-    joins = []
-    for filter_ in filter_info:
-        # filters.append(Node(model, filter_, resource, resource.schema).resolve())
-        filter, join = Node(model, filter_, resource, resource.schema).resolve()
-        filters.append(filter)
-        joins.extend(join)
-
-    return filters, joins
+    return create_filters_or_sorts(model, filter_info, resource, Node)
 
 
 class Node(object):
@@ -125,15 +79,18 @@ class Node(object):
     def resolve(self) -> FilterAndJoins:
         """Create filter for a particular node of the filter tree"""
         if self.resource and hasattr(self.resource, 'plugins'):
-            for i_plugins in self.resource.plugins:
+            for i_plugin in self.resource.plugins:
                 try:
-                    res = i_plugins.before_data_layers_filtering_alchemy_nested_resolve(self)
+                    res = i_plugin.before_data_layers_filtering_alchemy_nested_resolve(self)
                     if res is not None:
                         return res
                 except PluginMethodNotImplementedError:
                     pass
 
-        if 'or' not in self.filter_ and 'and' not in self.filter_ and 'not' not in self.filter_:
+        if all(map(
+                lambda op: op not in self.filter_,
+                ('or', 'and', 'not'),
+        )):
             value = self.value
 
             if isinstance(value, dict):
@@ -148,7 +105,7 @@ class Node(object):
                 value = {
                     'name': SPLIT_REL.join(self.filter_['name'].split(SPLIT_REL)[1:]),
                     'op': self.filter_['op'],
-                    'val': value
+                    'val': value,
                 }
                 alias = aliased(self.related_model)
                 joins = [[alias, self.column]]

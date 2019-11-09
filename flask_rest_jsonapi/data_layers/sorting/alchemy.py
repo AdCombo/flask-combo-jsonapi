@@ -1,10 +1,10 @@
 """Helper to create sqlalchemy sortings according to filter querystring parameter"""
 from typing import Any, List, Tuple
 
-from marshmallow import fields, ValidationError
 from sqlalchemy import sql
 from sqlalchemy.orm import aliased
 
+from flask_rest_jsonapi.data_layers.shared import create_filters_or_sorts
 from flask_rest_jsonapi.exceptions import InvalidFilters, PluginMethodNotImplementedError, InvalidSort
 from flask_rest_jsonapi.schema import get_relationships, get_model_field
 from flask_rest_jsonapi.utils import SPLIT_REL
@@ -18,45 +18,6 @@ SortAndJoins = Tuple[
     List[Join],
 ]
 
-# These fields cannot be arrays
-STANDARD_MARSHMALLOW_FIELDS = {
-    fields.Dict,
-    fields.Tuple,
-    fields.String,
-    fields.UUID,
-    fields.Number,
-    fields.Integer,
-    fields.Decimal,
-    fields.Boolean,
-    fields.Float,
-    fields.DateTime,
-    fields.Date,
-    fields.TimeDelta,
-    fields.Url,
-    fields.Str,
-    fields.Bool,
-    fields.Int,
-    fields.Constant,
-}
-
-
-def deserialize_field(marshmallow_field: fields.Field, value: Any) -> Any:
-    """
-    Десериализуем значение, которое приходит в фильтре
-    :param marshmallow_field: тип marshmallow поля
-    :param value: значение, которое прищло для фильтра
-    :return: сериализованное значение
-    """
-    try:
-        if isinstance(value, list) and type(marshmallow_field) in STANDARD_MARSHMALLOW_FIELDS:
-            return [marshmallow_field.deserialize(i_value) for i_value in value]
-        elif not isinstance(value, list) and isinstance(marshmallow_field, fields.List):
-            return marshmallow_field.deserialize([value])
-        return marshmallow_field.deserialize(value)
-    except ValidationError:
-        raise InvalidFilters(f'Bad filter value: {value}')
-
-
 def create_sorts(model, sort_info, resource):
     """Apply sorts from sorts information to base query
 
@@ -64,15 +25,7 @@ def create_sorts(model, sort_info, resource):
     :param list sort_info: current node sort information
     :param Resource resource: the resource
     """
-    sorts = []
-    joins = []
-    schema = getattr(resource, 'schema') if resource else None
-    for sort_ in sort_info:
-        sort, join = Node(model, sort_, resource, schema).resolve()
-        sorts.append(sort)
-        joins.extend(join)
-
-    return sorts, joins
+    return create_filters_or_sorts(model, sort_info, resource, Node)
 
 
 class Node(object):
@@ -118,9 +71,9 @@ class Node(object):
     def resolve(self) -> SortAndJoins:
         """Create sort for a particular node of the sort tree"""
         if hasattr(self.resource, 'plugins'):
-            for i_plugins in self.resource.plugins:
+            for i_plugin in self.resource.plugins:
                 try:
-                    res = i_plugins.before_data_layers_sorting_alchemy_nested_resolve(self)
+                    res = i_plugin.before_data_layers_sorting_alchemy_nested_resolve(self)
                     if res is not None:
                         return res
                 except PluginMethodNotImplementedError:
