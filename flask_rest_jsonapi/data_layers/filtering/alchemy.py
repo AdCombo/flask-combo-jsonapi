@@ -54,25 +54,29 @@ class Node(object):
         :param value:
         :return:
         """
-        if hasattr(marshmallow_field, f'_{operator}_sql_filter_'):
-            """
-            У marshmallow field может быть реализована своя логика создания фильтра для sqlalchemy
-            для определённого оператора. Чтобы реализовать свою логику создания фильтра для определённого оператора
-            необходимо реализовать в классе поля методы (название метода строится по следующему принципу
-            `_<тип оператора>_sql_filter_`). Также такой метод должен принимать ряд параметров 
-            * marshmallow_field - объект класса поля marshmallow
-            * model_column - объект класса поля sqlalchemy
-            * value - значения для фильтра
-            * operator - сам оператор, например: "eq", "in"...
-            """
-            return getattr(marshmallow_field, f'_{operator}_sql_filter_')(
+        """
+        Custom sqlachemy filtering logic can be created in a marshmallow field for any operator
+        To implement a new filtering logic (override existing or create a new one)
+        create a method inside a field following this pattern:
+        `_<your_op_name>_sql_filter_`. Each filtering method has to accept these params: 
+        * marshmallow_field - marshmallow field instance
+        * model_column - sqlalchemy column instance
+        * value - filtering value
+        * operator - your operator, for example: "eq", "in", "ilike_str_array", ...
+        """
+        try:
+            f = getattr(marshmallow_field, f'_{operator}_sql_filter_')
+        except AttributeError:
+            pass
+        else:
+            return f(
                 marshmallow_field=marshmallow_field,
                 model_column=model_column,
                 value=value,
-                operator=self.operator
+                operator=operator,
             )
-        # Нужно проводить валидацию и делать десериализацию значение указанных в фильтре, так как поля Enum
-        # например выгружаются как 'name_value(str)', а в БД хранится как просто число
+        # Here we have to deserialize and validate fields, that are used in filtering,
+        # so the Enum fields are loaded correctly
         value = deserialize_field(marshmallow_field, value)
         return getattr(model_column, self.operator)(value)
 
@@ -118,7 +122,7 @@ class Node(object):
                 marshmallow_field=self.schema._declared_fields[self.name],
                 model_column=self.column,
                 operator=self.filter_['op'],
-                value=value
+                value=value,
             ), []
 
         if 'or' in self.filter_:

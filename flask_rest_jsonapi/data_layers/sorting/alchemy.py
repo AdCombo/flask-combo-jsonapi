@@ -50,21 +50,24 @@ class Node(object):
         Create sqlalchemy sort
         :param marshmallow_field:
         :param model_column: column sqlalchemy
-        :param str order: desc | asc
+        :param str order: desc | asc (or custom)
         :return:
         """
-        if hasattr(marshmallow_field, f'_{order}_sql_filter_'):
-            """
-            У marshmallow field может быть реализована своя логика создания сортировки для sqlalchemy
-            для определённого типа ('asc', 'desc'). Чтобы реализовать свою логику создания сортировка для 
-            определённого оператора необходимо реализовать в классе поля методы (название метода строится по 
-            следующему принципу `_<тип сортировки>_sql_filter_`). Также такой метод должен принимать ряд параметров 
-            * marshmallow_field - объект класса поля marshmallow
-            * model_column - объект класса поля sqlalchemy
-            """
-            return getattr(marshmallow_field, f'_{order}_sql_filter_')(
+        """
+        Custom sqlachemy sorting logic can be created in a marshmallow field for any field
+        You can override existing ('asc', 'desc') or create new - then follow this pattern:
+        `_<custom_sort_name>_sql_sort_`. This method has to accept following params:
+        * marshmallow_field - marshmallow field instance
+        * model_column - sqlalchemy column instance
+        """
+        try:
+            f = getattr(marshmallow_field, f'_{order}_sql_sort_')
+        except AttributeError:
+            pass
+        else:
+            return f(
                 marshmallow_field=marshmallow_field,
-                model_column=model_column
+                model_column=model_column,
             )
         return getattr(model_column, order)()
 
