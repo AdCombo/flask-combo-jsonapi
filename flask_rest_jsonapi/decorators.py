@@ -1,6 +1,6 @@
 """Decorators to check headers and method requirements for each Api calls"""
 
-import json
+import simplejson as json
 from functools import wraps
 
 from flask import request, make_response, jsonify, current_app

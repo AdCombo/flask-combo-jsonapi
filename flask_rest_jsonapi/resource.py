@@ -1,7 +1,7 @@
 """This module contains the logic of resource management"""
 
 import inspect
-import json
+import simplejson as json
 
 from werkzeug.wrappers import Response
 from flask import request, url_for, make_response

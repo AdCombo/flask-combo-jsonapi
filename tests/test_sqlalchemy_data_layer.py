@@ -58,7 +58,7 @@ def string_json_attribute_person_model(base):
     https://avacariu.me/articles/2016/compiling-json-as-text-for-sqlite-with-sqlalchemy
     """
     import sqlalchemy.types as types
-    import json
+    import simplejson as json
 
     class StringyJSON(types.TypeDecorator):
         """Stores and retrieves JSON as TEXT."""
