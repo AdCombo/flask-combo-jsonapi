@@ -1,6 +1,6 @@
 """Helper to deal with querystring parameters according to jsonapi specification"""
 
-import json
+import simplejson as json
 
 from flask import current_app
 
