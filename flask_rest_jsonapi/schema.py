@@ -1,4 +1,5 @@
 """Helpers to deal with marshmallow schemas"""
+from collections import OrderedDict
 
 from marshmallow import class_registry
 from marshmallow.base import SchemaABC
@@ -57,6 +58,8 @@ def compute_schema(schema_cls, default_kwargs, qs, include):
         # make sure again that id field is in only parameter unless marshamllow will raise an Exception
         if schema.only is not None and 'id' not in schema.only:
             schema.only += ('id',)
+
+        schema.dump_fields = OrderedDict(**{name: val for name, val in schema.fields.items() if name in schema.only})
 
     # manage compound documents
     if include:
