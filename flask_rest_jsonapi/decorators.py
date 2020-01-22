@@ -83,6 +83,10 @@ def jsonapi_exception_formatter(func):
             if 'sentry' in current_app.extensions:
                 current_app.extensions['sentry'].captureException()
 
+            if hasattr(current_app, 'logger'):
+                # todo remove when put sentry to app extensions
+                current_app.logger.exception('an error occurred in JSONAPI: ')
+
             exc = JsonApiException(getattr(e,
                                            'detail',
                                            current_app.config.get('GLOBAL_ERROR_MESSAGE') or str(e)),
