@@ -1,8 +1,9 @@
 """Helper to  format Api errors according to jsonapi specification"""
-from flask_rest_jsonapi.exceptions import BadRequest, ObjectNotFound, InvalidType, AccessDenied
+from flask_rest_jsonapi.exceptions import BadRequest, ObjectNotFound, InvalidType, AccessDenied, Unauthorized
 
 STATUS_MAP = {
     400: BadRequest,
+    401: Unauthorized,
     404: ObjectNotFound,
     409: InvalidType,
     403: AccessDenied,

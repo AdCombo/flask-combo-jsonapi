@@ -98,6 +98,13 @@ class InvalidType(JsonApiException):
     status = '409'
 
 
+class Unauthorized(JsonApiException):
+    """Throw this error if the user is not authorized"""
+
+    title = 'Unauthorized'
+    status = '401'
+
+
 class AccessDenied(JsonApiException):
     """Throw this error when requested resource owner doesn't match the user of the ticket"""
 
