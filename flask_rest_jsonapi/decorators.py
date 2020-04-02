@@ -5,7 +5,7 @@ from functools import wraps
 
 from flask import request, make_response, jsonify, current_app
 
-from flask_rest_jsonapi.errors import jsonapi_errors
+from flask_rest_jsonapi.errors import jsonapi_errors, format_http_exception
 from flask_rest_jsonapi.exceptions import JsonApiException
 from flask_rest_jsonapi.utils import JSONEncoder
 
@@ -77,6 +77,12 @@ def jsonapi_exception_formatter(func):
                                  e.status,
                                  headers)
         except Exception as e:
+            api_ex = format_http_exception(e)
+            if api_ex:
+                return make_response(jsonify(jsonapi_errors([api_ex.to_dict()])),
+                                     api_ex.status,
+                                     headers)
+
             if current_app.config['DEBUG'] is True:
                 raise e
 
