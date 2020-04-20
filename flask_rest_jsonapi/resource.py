@@ -55,6 +55,7 @@ class Resource(MethodView):
         """Constructor of a resource instance"""
         if hasattr(cls, "_data_layer"):
             cls._data_layer.resource = cls
+            cls._data_layer.post_init()
 
         return super().__new__(cls)
 

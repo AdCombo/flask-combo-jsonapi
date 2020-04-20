@@ -125,7 +125,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
 
         query = self.retrieve_object_query(view_kwargs, filter_field, filter_value)
 
-        if hasattr(self, "resource"):
+        if self.resource is not None:
             for i_plugins in self.resource.plugins:
                 try:
                     query = i_plugins.data_layer_get_object_update_query(
