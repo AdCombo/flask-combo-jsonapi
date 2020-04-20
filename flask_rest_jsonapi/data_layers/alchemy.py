@@ -146,6 +146,15 @@ class SqlalchemyDataLayer(BaseDataLayer):
 
         return obj
 
+    def get_collection_count(self, query, qs, view_kwargs) -> int:
+        """
+        :param query: SQLAlchemy query
+        :param qs: QueryString
+        :param view_kwargs: view kwargs
+        :return:
+        """
+        return query.count()
+
     def get_collection(self, qs, view_kwargs):
         """Retrieve a collection of objects through sqlalchemy
 
@@ -174,7 +183,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
         if qs.sorting:
             query = self.sort_query(query, qs.sorting)
 
-        object_count = query.count()
+        objects_count = self.get_collection_count(query, qs, view_kwargs)
 
         if getattr(self, "eagerload_includes", True):
             query = self.eagerload_includes(query, qs)
@@ -185,7 +194,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
 
         collection = self.after_get_collection(collection, qs, view_kwargs)
 
-        return object_count, collection
+        return objects_count, collection
 
     def update_object(self, obj, data, view_kwargs):
         """Update an object through sqlalchemy
