@@ -11,10 +11,23 @@ from marshmallow.base import SchemaABC
 from flask import current_app
 from flask_rest_jsonapi.data_layers.base import BaseDataLayer
 from flask_rest_jsonapi.data_layers.sorting.alchemy import create_sorts
-from flask_rest_jsonapi.exceptions import RelationNotFound, RelatedObjectNotFound, JsonApiException, \
-    InvalidSort, ObjectNotFound, InvalidInclude, InvalidType, PluginMethodNotImplementedError
+from flask_rest_jsonapi.exceptions import (
+    RelationNotFound,
+    RelatedObjectNotFound,
+    JsonApiException,
+    ObjectNotFound,
+    InvalidInclude,
+    InvalidType,
+    PluginMethodNotImplementedError,
+)
 from flask_rest_jsonapi.data_layers.filtering.alchemy import create_filters
-from flask_rest_jsonapi.schema import get_model_field, get_related_schema, get_relationships, get_nested_fields, get_schema_field
+from flask_rest_jsonapi.schema import (
+    get_model_field,
+    get_related_schema,
+    get_relationships,
+    get_nested_fields,
+    get_schema_field,
+)
 from flask_rest_jsonapi.utils import SPLIT_REL
 
 
@@ -28,12 +41,14 @@ class SqlalchemyDataLayer(BaseDataLayer):
         """
         super().__init__(kwargs)
 
-        if not hasattr(self, 'session'):
-            raise Exception("You must provide a session in data_layer_kwargs to use sqlalchemy data layer in {}"
-                            .format(self.resource.__name__))
-        if not hasattr(self, 'model'):
-            raise Exception("You must provide a model in data_layer_kwargs to use sqlalchemy data layer in {}"
-                            .format(self.resource.__name__))
+        if not hasattr(self, "session"):
+            raise Exception(
+                f"You must provide a session in data_layer_kwargs to use sqlalchemy data layer in {self.resource.__name__}"
+            )
+        if not hasattr(self, "model"):
+            raise Exception(
+                f"You must provide a model in data_layer_kwargs to use sqlalchemy data layer in {self.resource.__name__}"
+            )
 
     def create_object(self, data, view_kwargs):
         """Create an object through sqlalchemy
@@ -57,18 +72,20 @@ class SqlalchemyDataLayer(BaseDataLayer):
 
         for i_plugins in self.resource.plugins:
             try:
-                data = i_plugins.data_layer_create_object_clean_data(data=data, view_kwargs=view_kwargs,
-                                                                     join_fields=join_fields, self_json_api=self)
+                data = i_plugins.data_layer_create_object_clean_data(
+                    data=data, view_kwargs=view_kwargs, join_fields=join_fields, self_json_api=self,
+                )
             except PluginMethodNotImplementedError:
                 pass
-        obj = self.model(**{key: value
-                            for (key, value) in data.items() if key not in join_fields})
+        obj = self.model(**{key: value for (key, value) in data.items() if key not in join_fields})
         self.apply_relationships(data, obj)
         self.apply_nested_fields(data, obj)
 
         for i_plugins in self.resource.plugins:
             try:
-                i_plugins.data_layer_after_create_object(data=data, view_kwargs=view_kwargs, obj=obj, self_json_api=self)
+                i_plugins.data_layer_after_create_object(
+                    data=data, view_kwargs=view_kwargs, obj=obj, self_json_api=self,
+                )
             except PluginMethodNotImplementedError:
                 pass
 
@@ -80,7 +97,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
             raise e
         except Exception as e:
             self.session.rollback()
-            raise JsonApiException("Object creation error: " + str(e), source={'pointer': '/data'})
+            raise JsonApiException(f"Object creation error: {e}", source={"pointer": "/data"})
 
         self.after_create_object(obj, data, view_kwargs)
 
@@ -97,23 +114,23 @@ class SqlalchemyDataLayer(BaseDataLayer):
 
         self.before_get_object(view_kwargs)
 
-        id_field = getattr(self, 'id_field', inspect(self.model).primary_key[0].key)
+        id_field = getattr(self, "id_field", inspect(self.model).primary_key[0].key)
         try:
             filter_field = getattr(self.model, id_field)
         except Exception:
-            raise Exception("{} has no attribute {}".format(self.model.__name__, id_field))
+            raise Exception(f"{self.model.__name__} has no attribute {id_field}")
 
-        url_field = getattr(self, 'url_field', 'id')
+        url_field = getattr(self, "url_field", "id")
         filter_value = view_kwargs[url_field]
 
         query = self.retrieve_object_query(view_kwargs, filter_field, filter_value)
 
-        if hasattr(self, 'resource'):
+        if hasattr(self, "resource"):
             for i_plugins in self.resource.plugins:
                 try:
-                    query = i_plugins.data_layer_get_object_update_query(query=query, qs=qs,
-                                                                         view_kwargs=view_kwargs,
-                                                                         self_json_api=self)
+                    query = i_plugins.data_layer_get_object_update_query(
+                        query=query, qs=qs, view_kwargs=view_kwargs, self_json_api=self,
+                    )
                 except PluginMethodNotImplementedError:
                     pass
 
@@ -145,9 +162,9 @@ class SqlalchemyDataLayer(BaseDataLayer):
 
         for i_plugins in self.resource.plugins:
             try:
-                query = i_plugins.data_layer_get_collection_update_query(query=query, qs=qs,
-                                                                         view_kwargs=view_kwargs,
-                                                                         self_json_api=self)
+                query = i_plugins.data_layer_get_collection_update_query(
+                    query=query, qs=qs, view_kwargs=view_kwargs, self_json_api=self,
+                )
             except PluginMethodNotImplementedError:
                 pass
 
@@ -159,7 +176,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
 
         object_count = query.count()
 
-        if getattr(self, 'eagerload_includes', True):
+        if getattr(self, "eagerload_includes", True):
             query = self.eagerload_includes(query, qs)
 
         query = self.paginate_query(query, qs.pagination)
@@ -179,10 +196,9 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :return boolean: True if object have changed else False
         """
         if obj is None:
-            url_field = getattr(self, 'url_field', 'id')
+            url_field = getattr(self, "url_field", "id")
             filter_value = view_kwargs[url_field]
-            raise ObjectNotFound('{}: {} not found'.format(self.model.__name__, filter_value),
-                                 source={'parameter': url_field})
+            raise ObjectNotFound(f"{self.model.__name__}: {filter_value} not found", source={"parameter": url_field})
 
         self.before_update_object(obj, data, view_kwargs)
 
@@ -193,8 +209,9 @@ class SqlalchemyDataLayer(BaseDataLayer):
 
         for i_plugins in self.resource.plugins:
             try:
-                data = i_plugins.data_layer_update_object_clean_data(data=data, obj=obj, view_kwargs=view_kwargs,
-                                                                     join_fields=join_fields, self_json_api=self)
+                data = i_plugins.data_layer_update_object_clean_data(
+                    data=data, obj=obj, view_kwargs=view_kwargs, join_fields=join_fields, self_json_api=self,
+                )
             except PluginMethodNotImplementedError:
                 pass
 
@@ -212,11 +229,11 @@ class SqlalchemyDataLayer(BaseDataLayer):
             raise e
         except Exception as e:
             self.session.rollback()
-            orig_e = getattr(e, 'orig', object)
-            message = getattr(orig_e, 'args', [])
+            orig_e = getattr(e, "orig", object)
+            message = getattr(orig_e, "args", [])
             message = message[0] if message else None
             e = message if message else e
-            raise JsonApiException("Update object error: " + str(e), source={'pointer': '/data'})
+            raise JsonApiException("Update object error: " + str(e), source={"pointer": "/data"})
 
         self.after_update_object(obj, data, view_kwargs)
 
@@ -227,10 +244,9 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :param dict view_kwargs: kwargs from the resource view
         """
         if obj is None:
-            url_field = getattr(self, 'url_field', 'id')
+            url_field = getattr(self, "url_field", "id")
             filter_value = view_kwargs[url_field]
-            raise ObjectNotFound('{}: {} not found'.format(self.model.__name__, filter_value),
-                                 source={'parameter': url_field})
+            raise ObjectNotFound(f"{self.model.__name__}: {filter_value} not found", source={"parameter": url_field})
 
         self.before_delete_object(obj, view_kwargs)
 
@@ -266,31 +282,31 @@ class SqlalchemyDataLayer(BaseDataLayer):
         obj = self.get_object(view_kwargs)
 
         if obj is None:
-            url_field = getattr(self, 'url_field', 'id')
+            url_field = getattr(self, "url_field", "id")
             filter_value = view_kwargs[url_field]
-            raise ObjectNotFound('{}: {} not found'.format(self.model.__name__, filter_value),
-                                 source={'parameter': url_field})
+            raise ObjectNotFound(f"{self.model.__name__}: {filter_value} not found", source={"parameter": url_field})
 
         if not hasattr(obj, relationship_field):
-            raise RelationNotFound("{} has no attribute {}".format(obj.__class__.__name__, relationship_field))
+            raise RelationNotFound(f"{obj.__class__.__name__} has no attribute {relationship_field}")
 
         related_model = getattr(obj.__class__, relationship_field).property.mapper.class_
 
         updated = False
 
-        if isinstance(json_data['data'], list):
+        if isinstance(json_data["data"], list):
             obj_ids = {str(getattr(obj__, related_id_field)) for obj__ in getattr(obj, relationship_field)}
 
-            for obj_ in json_data['data']:
-                if obj_['id'] not in obj_ids:
-                    getattr(obj,
-                            relationship_field).append(self.get_related_object(related_model, related_id_field, obj_))
+            for obj_ in json_data["data"]:
+                if obj_["id"] not in obj_ids:
+                    getattr(obj, relationship_field).append(
+                        self.get_related_object(related_model, related_id_field, obj_)
+                    )
                     updated = True
         else:
             related_object = None
 
-            if json_data['data'] is not None:
-                related_object = self.get_related_object(related_model, related_id_field, json_data['data'])
+            if json_data["data"] is not None:
+                related_object = self.get_related_object(related_model, related_id_field, json_data["data"])
 
             obj_id = getattr(getattr(obj, relationship_field), related_id_field, None)
             new_obj_id = getattr(related_object, related_id_field, None)
@@ -325,27 +341,26 @@ class SqlalchemyDataLayer(BaseDataLayer):
         obj = self.get_object(view_kwargs)
 
         if obj is None:
-            url_field = getattr(self, 'url_field', 'id')
+            url_field = getattr(self, "url_field", "id")
             filter_value = view_kwargs[url_field]
-            raise ObjectNotFound('{}: {} not found'.format(self.model.__name__, filter_value),
-                                 source={'parameter': url_field})
+            raise ObjectNotFound(f"{self.model.__name__}: {filter_value} not found", source={"parameter": url_field})
 
         if not hasattr(obj, relationship_field):
-            raise RelationNotFound("{} has no attribute {}".format(obj.__class__.__name__, relationship_field))
+            raise RelationNotFound(f"{obj.__class__.__name__} has no attribute {relationship_field}")
 
         related_objects = getattr(obj, relationship_field)
 
         if related_objects is None:
             return obj, related_objects
 
-        self.after_get_relationship(obj, related_objects, relationship_field, related_type_, related_id_field,
-                                    view_kwargs)
+        self.after_get_relationship(
+            obj, related_objects, relationship_field, related_type_, related_id_field, view_kwargs,
+        )
 
         if isinstance(related_objects, InstrumentedList):
-            return obj,\
-                [{'type': related_type_, 'id': getattr(obj_, related_id_field)} for obj_ in related_objects]
+            return obj, [{"type": related_type_, "id": getattr(obj_, related_id_field)} for obj_ in related_objects]
         else:
-            return obj, {'type': related_type_, 'id': getattr(related_objects, related_id_field)}
+            return obj, {"type": related_type_, "id": getattr(related_objects, related_id_field)}
 
     def update_relationship(self, json_data, relationship_field, related_id_field, view_kwargs):
         """Update a relationship
@@ -361,22 +376,21 @@ class SqlalchemyDataLayer(BaseDataLayer):
         obj = self.get_object(view_kwargs)
 
         if obj is None:
-            url_field = getattr(self, 'url_field', 'id')
+            url_field = getattr(self, "url_field", "id")
             filter_value = view_kwargs[url_field]
-            raise ObjectNotFound('{}: {} not found'.format(self.model.__name__, filter_value),
-                                 source={'parameter': url_field})
+            raise ObjectNotFound(f"{self.model.__name__}: {filter_value} not found", source={"parameter": url_field})
 
         if not hasattr(obj, relationship_field):
-            raise RelationNotFound("{} has no attribute {}".format(obj.__class__.__name__, relationship_field))
+            raise RelationNotFound(f"{obj.__class__.__name__} has no attribute {relationship_field}")
 
         related_model = getattr(obj.__class__, relationship_field).property.mapper.class_
 
         updated = False
 
-        if isinstance(json_data['data'], list):
+        if isinstance(json_data["data"], list):
             related_objects = []
 
-            for obj_ in json_data['data']:
+            for obj_ in json_data["data"]:
                 related_objects.append(self.get_related_object(related_model, related_id_field, obj_))
 
             obj_ids = {getattr(obj__, related_id_field) for obj__ in getattr(obj, relationship_field)}
@@ -388,8 +402,8 @@ class SqlalchemyDataLayer(BaseDataLayer):
         else:
             related_object = None
 
-            if json_data['data'] is not None:
-                related_object = self.get_related_object(related_model, related_id_field, json_data['data'])
+            if json_data["data"] is not None:
+                related_object = self.get_related_object(related_model, related_id_field, json_data["data"])
 
             obj_id = getattr(getattr(obj, relationship_field), related_id_field, None)
             new_obj_id = getattr(related_object, related_id_field, None)
@@ -423,25 +437,25 @@ class SqlalchemyDataLayer(BaseDataLayer):
         obj = self.get_object(view_kwargs)
 
         if obj is None:
-            url_field = getattr(self, 'url_field', 'id')
+            url_field = getattr(self, "url_field", "id")
             filter_value = view_kwargs[url_field]
-            raise ObjectNotFound('{}: {} not found'.format(self.model.__name__, filter_value),
-                                 source={'parameter': url_field})
+            raise ObjectNotFound(f"{self.model.__name__}: {filter_value} not found", source={"parameter": url_field})
 
         if not hasattr(obj, relationship_field):
-            raise RelationNotFound("{} has no attribute {}".format(obj.__class__.__name__, relationship_field))
+            raise RelationNotFound(f"{obj.__class__.__name__} has no attribute {relationship_field}")
 
         related_model = getattr(obj.__class__, relationship_field).property.mapper.class_
 
         updated = False
 
-        if isinstance(json_data['data'], list):
+        if isinstance(json_data["data"], list):
             obj_ids = {str(getattr(obj__, related_id_field)) for obj__ in getattr(obj, relationship_field)}
 
-            for obj_ in json_data['data']:
-                if obj_['id'] in obj_ids:
-                    getattr(obj,
-                            relationship_field).remove(self.get_related_object(related_model, related_id_field, obj_))
+            for obj_ in json_data["data"]:
+                if obj_["id"] in obj_ids:
+                    getattr(obj, relationship_field).remove(
+                        self.get_related_object(related_model, related_id_field, obj_)
+                    )
                     updated = True
         else:
             setattr(obj, relationship_field, None)
@@ -469,13 +483,11 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :return DeclarativeMeta: a related object
         """
         try:
-            related_object = self.session.query(related_model)\
-                                         .filter(getattr(related_model, related_id_field) == obj['id'])\
-                                         .one()
+            related_object = (
+                self.session.query(related_model).filter(getattr(related_model, related_id_field) == obj["id"]).one()
+            )
         except NoResultFound:
-            raise RelatedObjectNotFound("{}.{}: {} not found".format(related_model.__name__,
-                                                                     related_id_field,
-                                                                     obj['id']))
+            raise RelatedObjectNotFound(f"{related_model.__name__}.{related_id_field}: {obj['id']} not found")
 
         return related_object
 
@@ -498,20 +510,20 @@ class SqlalchemyDataLayer(BaseDataLayer):
                     related_objects = []
 
                     for identifier in value:
-                        related_object = self.get_related_object(related_model, related_id_field, {'id': identifier})
+                        related_object = self.get_related_object(related_model, related_id_field, {"id": identifier})
                         related_objects.append(related_object)
 
-                    relationships_to_apply.append({'field': key, 'value': related_objects})
+                    relationships_to_apply.append({"field": key, "value": related_objects})
                 else:
                     related_object = None
 
                     if value is not None:
-                        related_object = self.get_related_object(related_model, related_id_field, {'id': value})
+                        related_object = self.get_related_object(related_model, related_id_field, {"id": value})
 
-                    relationships_to_apply.append({'field': key, 'value': related_object})
+                    relationships_to_apply.append({"field": key, "value": related_object})
 
         for relationship in relationships_to_apply:
-            setattr(obj, relationship['field'], relationship['value'])
+            setattr(obj, relationship["field"], relationship["value"])
 
     def apply_nested_fields(self, data, obj):
         nested_fields_to_apply = []
@@ -533,16 +545,16 @@ class SqlalchemyDataLayer(BaseDataLayer):
                             nested_object = nested_model(**identifier)
                             nested_objects.append(nested_object)
 
-                        nested_fields_to_apply.append({'field': key, 'value': nested_objects})
+                        nested_fields_to_apply.append({"field": key, "value": nested_objects})
                     else:
-                        nested_fields_to_apply.append({'field': key, 'value': nested_model(**value)})
+                        nested_fields_to_apply.append({"field": key, "value": nested_model(**value)})
                 elif isinstance(nested_field_inspection.property, ColumnProperty):
-                    nested_fields_to_apply.append({'field': key, 'value': value})
+                    nested_fields_to_apply.append({"field": key, "value": value})
                 else:
                     raise InvalidType("Unrecognized nested field type: not a RelationshipProperty or ColumnProperty.")
 
         for nested_field in nested_fields_to_apply:
-            setattr(obj, nested_field['field'], nested_field['value'])
+            setattr(obj, nested_field["field"], nested_field["value"])
 
     def filter_query(self, query, filter_info, model):
         """Filter query according to jsonapi 1.0
@@ -569,7 +581,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :return Query: the sorted query
         """
         if sort_info:
-            sorts, joins = create_sorts(self.model, sort_info, self.resource if hasattr(self, 'resource') else None)
+            sorts, joins = create_sorts(self.model, sort_info, self.resource if hasattr(self, "resource") else None)
             for i_join in joins:
                 query = query.join(*i_join)
             for i_sort in sorts:
@@ -583,13 +595,13 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :param dict paginate_info: pagination information
         :return Query: the paginated query
         """
-        if int(paginate_info.get('size', 1)) == 0:
+        if int(paginate_info.get("size", 1)) == 0:
             return query
 
-        page_size = int(paginate_info.get('size', 0)) or current_app.config['PAGE_SIZE']
+        page_size = int(paginate_info.get("size", 0)) or current_app.config["PAGE_SIZE"]
         query = query.limit(page_size)
-        if paginate_info.get('number'):
-            query = query.offset((int(paginate_info['number']) - 1) * page_size)
+        if paginate_info.get("number"):
+            query = query.offset((int(paginate_info["number"]) - 1) * page_size)
 
         return query
 
@@ -771,8 +783,9 @@ class SqlalchemyDataLayer(BaseDataLayer):
         """
         pass
 
-    def after_get_relationship(self, obj, related_objects, relationship_field, related_type_, related_id_field,
-                               view_kwargs):
+    def after_get_relationship(
+        self, obj, related_objects, relationship_field, related_type_, related_id_field, view_kwargs,
+    ):
         """Make work after to get information about a relationship
 
         :param obj: an object from data layer
