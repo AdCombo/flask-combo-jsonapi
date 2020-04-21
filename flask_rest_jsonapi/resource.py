@@ -26,24 +26,24 @@ class ResourceMeta(MethodViewType):
     def __new__(cls, name, bases, d):
         """Constructor of a resource class"""
         rv = super().__new__(cls, name, bases, d)
-        if 'data_layer' in d:
-            if not isinstance(d['data_layer'], dict):
-                raise Exception("You must provide a data layer information as dict in {}".format(cls.__name__))
+        if "data_layer" in d:
+            if not isinstance(d["data_layer"], dict):
+                raise Exception(f"You must provide a data layer information as dict in {cls.__name__}")
 
-            if d['data_layer'].get('class') is not None\
-                    and BaseDataLayer not in inspect.getmro(d['data_layer']['class']):
-                raise Exception("You must provide a data layer class inherited from BaseDataLayer in {}"
-                                .format(cls.__name__))
+            if d["data_layer"].get("class") is not None and BaseDataLayer not in inspect.getmro(
+                d["data_layer"]["class"]
+            ):
+                raise Exception(f"You must provide a data layer class inherited from BaseDataLayer in {cls.__name__}")
 
-            data_layer_cls = d['data_layer'].get('class', SqlalchemyDataLayer)
-            data_layer_kwargs = d['data_layer']
+            data_layer_cls = d["data_layer"].get("class", SqlalchemyDataLayer)
+            data_layer_kwargs = d["data_layer"]
             rv._data_layer = data_layer_cls(data_layer_kwargs)
 
         rv.decorators = (check_headers,)
-        if 'decorators' in d:
-            rv.decorators += d['decorators']
+        if "decorators" in d:
+            rv.decorators += d["decorators"]
 
-        rv.plugins = d.get('plugins', [])
+        rv.plugins = d.get("plugins", [])
 
         return rv
 
@@ -53,7 +53,7 @@ class Resource(MethodView):
 
     def __new__(cls):
         """Constructor of a resource instance"""
-        if hasattr(cls, '_data_layer'):
+        if hasattr(cls, "_data_layer"):
             cls._data_layer.resource = cls
 
         return super().__new__(cls)
@@ -62,26 +62,26 @@ class Resource(MethodView):
     def dispatch_request(self, *args, **kwargs):
         """Logic of how to handle a request"""
         method = getattr(self, request.method.lower(), None)
-        if method is None and request.method == 'HEAD':
-            method = getattr(self, 'get', None)
-        assert method is not None, 'Unimplemented method {}'.format(request.method)
+        if method is None and request.method == "HEAD":
+            method = getattr(self, "get", None)
+        assert method is not None, f"Unimplemented method {request.method}"
 
-        headers = {'Content-Type': 'application/vnd.api+json'}
+        headers = {"Content-Type": "application/vnd.api+json"}
 
         response = method(*args, **kwargs)
 
         if isinstance(response, Response):
-            response.headers.add('Content-Type', 'application/vnd.api+json')
+            response.headers.add("Content-Type", "application/vnd.api+json")
             return response
 
         if not isinstance(response, tuple):
             if isinstance(response, dict):
-                response.update({'jsonapi': {'version': '1.0'}})
+                response.update({"jsonapi": {"version": "1.0"}})
             return make_response(json.dumps(response, cls=JSONEncoder), 200, headers)
 
         try:
             data, status_code, headers = response
-            headers.update({'Content-Type': 'application/vnd.api+json'})
+            headers.update({"Content-Type": "application/vnd.api+json"})
         except ValueError:
             pass
 
@@ -91,10 +91,10 @@ class Resource(MethodView):
             pass
 
         if isinstance(data, dict):
-            data.update({'jsonapi': {'version': '1.0'}})
+            data.update({"jsonapi": {"version": "1.0"}})
 
         if isinstance(data, FlaskResponse):
-            data.headers.add('Content-Type', 'application/vnd.api+json')
+            data.headers.add("Content-Type", "application/vnd.api+json")
             data.status_code = status_code
             return data
         elif isinstance(data, str):
@@ -117,32 +117,27 @@ class ResourceList(Resource, metaclass=ResourceMeta):
 
         objects_count, objects = self.get_collection(qs, kwargs)
 
-        schema_kwargs = getattr(self, 'get_schema_kwargs', dict())
-        schema_kwargs.update({'many': True})
+        schema_kwargs = getattr(self, "get_schema_kwargs", dict())
+        schema_kwargs.update({"many": True})
 
         self.before_marshmallow(args, kwargs)
 
-        schema = compute_schema(self.schema,
-                                schema_kwargs,
-                                qs,
-                                qs.include)
+        schema = compute_schema(self.schema, schema_kwargs, qs, qs.include)
 
         for i_plugins in self.plugins:
             try:
-                i_plugins.after_init_schema_in_resource_list_get(*args, schema=schema, model=self.data_layer['model'],
-                                                                 **kwargs)
+                i_plugins.after_init_schema_in_resource_list_get(
+                    *args, schema=schema, model=self.data_layer["model"], **kwargs
+                )
             except PluginMethodNotImplementedError:
                 pass
 
         result = schema.dump(objects)
 
-        view_kwargs = request.view_args if getattr(self, 'view_kwargs', None) is True else dict()
-        add_pagination_links(result,
-                             objects_count,
-                             qs,
-                             url_for(self.view, _external=True, **view_kwargs))
+        view_kwargs = request.view_args if getattr(self, "view_kwargs", None) is True else dict()
+        add_pagination_links(result, objects_count, qs, url_for(self.view, _external=True, **view_kwargs))
 
-        result.update({'meta': {'count': objects_count}})
+        result.update({"meta": {"count": objects_count}})
 
         final_result = self.after_get(result)
 
@@ -151,19 +146,17 @@ class ResourceList(Resource, metaclass=ResourceMeta):
     @check_method_requirements
     def post(self, *args, **kwargs):
         """Create an object"""
-        json_data = request.get_json() or {}
+        json_data = request.json or {}
 
         qs = QSManager(request.args, self.schema)
 
-        schema = compute_schema(self.schema,
-                                getattr(self, 'post_schema_kwargs', dict()),
-                                qs,
-                                qs.include)
+        schema = compute_schema(self.schema, getattr(self, "post_schema_kwargs", dict()), qs, qs.include)
 
         for i_plugins in self.plugins:
             try:
-                i_plugins.after_init_schema_in_resource_list_post(*args, schema=schema, model=self.data_layer['model'],
-                                                                  **kwargs)
+                i_plugins.after_init_schema_in_resource_list_post(
+                    *args, schema=schema, model=self.data_layer["model"], **kwargs
+                )
             except PluginMethodNotImplementedError:
                 pass
 
@@ -171,15 +164,15 @@ class ResourceList(Resource, metaclass=ResourceMeta):
             data = schema.load(json_data)
         except IncorrectTypeError as e:
             errors = e.messages
-            for error in errors['errors']:
-                error['status'] = '409'
-                error['title'] = "Incorrect type"
+            for error in errors["errors"]:
+                error["status"] = "409"
+                error["title"] = "Incorrect type"
             return errors, 409
         except ValidationError as e:
             errors = e.messages
-            for message in errors['errors']:
-                message['status'] = '422'
-                message['title'] = "Validation error"
+            for message in errors["errors"]:
+                message["status"] = "422"
+                message["title"] = "Validation error"
             return errors, 422
 
         self.before_post(args, kwargs, data=data)
@@ -188,8 +181,8 @@ class ResourceList(Resource, metaclass=ResourceMeta):
 
         result = schema.dump(obj)
 
-        if result['data'].get('links', {}).get('self'):
-            final_result = (result, 201, {'Location': result['data']['links']['self']})
+        if result["data"].get("links", {}).get("self"):
+            final_result = (result, 201, {"Location": result["data"]["links"]["self"]})
         else:
             final_result = (result, 201)
 
@@ -237,15 +230,13 @@ class ResourceDetail(Resource, metaclass=ResourceMeta):
 
         self.before_marshmallow(args, kwargs)
 
-        schema = compute_schema(self.schema,
-                                getattr(self, 'get_schema_kwargs', dict()),
-                                qs,
-                                qs.include)
+        schema = compute_schema(self.schema, getattr(self, "get_schema_kwargs", dict()), qs, qs.include)
 
         for i_plugins in self.plugins:
             try:
-                i_plugins.after_init_schema_in_resource_detail_get(*args, schema=schema, model=self.data_layer['model'],
-                                                                   **kwargs)
+                i_plugins.after_init_schema_in_resource_detail_get(
+                    *args, schema=schema, model=self.data_layer["model"], **kwargs
+                )
             except PluginMethodNotImplementedError:
                 pass
 
@@ -258,23 +249,21 @@ class ResourceDetail(Resource, metaclass=ResourceMeta):
     @check_method_requirements
     def patch(self, *args, **kwargs):
         """Update an object"""
-        json_data = request.get_json() or {}
+        json_data = request.json or {}
 
         qs = QSManager(request.args, self.schema)
-        schema_kwargs = getattr(self, 'patch_schema_kwargs', dict())
-        schema_kwargs.update({'partial': True})
+        schema_kwargs = getattr(self, "patch_schema_kwargs", dict())
+        schema_kwargs.update({"partial": True})
 
         self.before_marshmallow(args, kwargs)
 
-        schema = compute_schema(self.schema,
-                                schema_kwargs,
-                                qs,
-                                qs.include)
+        schema = compute_schema(self.schema, schema_kwargs, qs, qs.include)
 
         for i_plugins in self.plugins:
             try:
-                i_plugins.after_init_schema_in_resource_detail_patch(*args, schema=schema, model=self.data_layer['model'],
-                                                                     **kwargs)
+                i_plugins.after_init_schema_in_resource_detail_patch(
+                    *args, schema=schema, model=self.data_layer["model"], **kwargs
+                )
             except PluginMethodNotImplementedError:
                 pass
 
@@ -282,23 +271,23 @@ class ResourceDetail(Resource, metaclass=ResourceMeta):
             data = schema.load(json_data)
         except IncorrectTypeError as e:
             errors = e.messages
-            for error in errors['errors']:
-                error['status'] = '409'
-                error['title'] = "Incorrect type"
+            for error in errors["errors"]:
+                error["status"] = "409"
+                error["title"] = "Incorrect type"
             return errors, 409
         except ValidationError as e:
             errors = e.messages
-            for message in errors['errors']:
-                message['status'] = '422'
-                message['title'] = "Validation error"
+            for message in errors["errors"]:
+                message["status"] = "422"
+                message["title"] = "Validation error"
             return errors, 422
 
-        if 'id' not in json_data['data']:
-            raise BadRequest('Missing id in "data" node',
-                             source={'pointer': '/data/id'})
-        if (str(json_data['data']['id']) != str(kwargs[getattr(self._data_layer, 'url_field', 'id')])):
-            raise BadRequest('Value of id does not match the resource identifier in url',
-                             source={'pointer': '/data/id'})
+        if "id" not in json_data["data"]:
+            raise BadRequest('Missing id in "data" node', source={"pointer": "/data/id"})
+        if str(json_data["data"]["id"]) != str(kwargs[getattr(self._data_layer, "url_field", "id")]):
+            raise BadRequest(
+                "Value of id does not match the resource identifier in url", source={"pointer": "/data/id"}
+            )
 
         self.before_patch(args, kwargs, data=data)
 
@@ -317,7 +306,7 @@ class ResourceDetail(Resource, metaclass=ResourceMeta):
 
         self.delete_object(kwargs)
 
-        result = {'meta': {'message': 'Object successfully deleted'}}
+        result = {"meta": {"message": "Object successfully deleted"}}
 
         final_result = self.after_delete(result)
 
@@ -374,64 +363,72 @@ class ResourceRelationship(Resource, metaclass=ResourceMeta):
 
         relationship_field, model_relationship_field, related_type_, related_id_field = self._get_relationship_data()
 
-        obj, data = self._data_layer.get_relationship(model_relationship_field,
-                                                      related_type_,
-                                                      related_id_field,
-                                                      kwargs)
+        obj, data = self._data_layer.get_relationship(model_relationship_field, related_type_, related_id_field, kwargs)
 
-        result = {'links': {'self': request.path,
-                            'related': self.schema._declared_fields[relationship_field].get_related_url(obj)},
-                  'data': data}
+        result = {
+            "links": {
+                "self": request.path,
+                "related": self.schema._declared_fields[relationship_field].get_related_url(obj),
+            },
+            "data": data,
+        }
 
         qs = QSManager(request.args, self.schema)
         if qs.include:
             schema = compute_schema(self.schema, dict(), qs, qs.include)
 
             serialized_obj = schema.dump(obj)
-            result['included'] = serialized_obj.get('included', dict())
+            result["included"] = serialized_obj.get("included", dict())
 
         final_result = self.after_get(result)
 
         return final_result
 
+    def _get_validated_json_payload(self, related_type_) -> dict:
+        """
+        Extracting json and validating its fields
+        :return:
+        """
+        json_data = request.json or {}
+
+        if "data" not in json_data:
+            raise BadRequest('You must provide data with a "data" route node', source={"pointer": "/data"})
+        if isinstance(json_data["data"], dict):
+            if "type" not in json_data["data"]:
+                raise BadRequest('Missing type in "data" node', source={"pointer": "/data/type"})
+            if "id" not in json_data["data"]:
+                raise BadRequest('Missing id in "data" node', source={"pointer": "/data/id"})
+            if json_data["data"]["type"] != related_type_:
+                raise InvalidType("The type field does not match the resource type", source={"pointer": "/data/type"})
+        if isinstance(json_data["data"], list):
+            for obj in json_data["data"]:
+                if "type" not in obj:
+                    raise BadRequest('Missing type in "data" node', source={"pointer": "/data/type"})
+                if "id" not in obj:
+                    raise BadRequest('Missing id in "data" node', source={"pointer": "/data/id"})
+                if obj["type"] != related_type_:
+                    raise InvalidType(
+                        "The type provided does not match the resource type", source={"pointer": "/data/type"}
+                    )
+
+        return json_data
+
     @check_method_requirements
     def post(self, *args, **kwargs):
         """Add / create relationship(s)"""
-        json_data = request.get_json() or {}
-
         relationship_field, model_relationship_field, related_type_, related_id_field = self._get_relationship_data()
-
-        if 'data' not in json_data:
-            raise BadRequest('You must provide data with a "data" route node', source={'pointer': '/data'})
-        if isinstance(json_data['data'], dict):
-            if 'type' not in json_data['data']:
-                raise BadRequest('Missing type in "data" node', source={'pointer': '/data/type'})
-            if 'id' not in json_data['data']:
-                raise BadRequest('Missing id in "data" node', source={'pointer': '/data/id'})
-            if json_data['data']['type'] != related_type_:
-                raise InvalidType('The type field does not match the resource type', source={'pointer': '/data/type'})
-        if isinstance(json_data['data'], list):
-            for obj in json_data['data']:
-                if 'type' not in obj:
-                    raise BadRequest('Missing type in "data" node', source={'pointer': '/data/type'})
-                if 'id' not in obj:
-                    raise BadRequest('Missing id in "data" node', source={'pointer': '/data/id'})
-                if obj['type'] != related_type_:
-                    raise InvalidType('The type provided does not match the resource type',
-                                      source={'pointer': '/data/type'})
-
+        json_data = self._get_validated_json_payload(related_type_)
         self.before_post(args, kwargs, json_data=json_data)
 
-        obj_, updated = self._data_layer.create_relationship(json_data,
-                                                             model_relationship_field,
-                                                             related_id_field,
-                                                             kwargs)
+        obj_, updated = self._data_layer.create_relationship(
+            json_data, model_relationship_field, related_id_field, kwargs
+        )
 
         status_code = 200
-        result = {'meta': {'message': 'Relationship successfully created'}}
+        result = {"meta": {"message": "Relationship successfully created"}}
 
         if updated is False:
-            result = ''
+            result = ""
             status_code = 204
 
         final_result = self.after_post(result, status_code)
@@ -441,41 +438,20 @@ class ResourceRelationship(Resource, metaclass=ResourceMeta):
     @check_method_requirements
     def patch(self, *args, **kwargs):
         """Update a relationship"""
-        json_data = request.get_json() or {}
-
         relationship_field, model_relationship_field, related_type_, related_id_field = self._get_relationship_data()
 
-        if 'data' not in json_data:
-            raise BadRequest('You must provide data with a "data" route node', source={'pointer': '/data'})
-        if isinstance(json_data['data'], dict):
-            if 'type' not in json_data['data']:
-                raise BadRequest('Missing type in "data" node', source={'pointer': '/data/type'})
-            if 'id' not in json_data['data']:
-                raise BadRequest('Missing id in "data" node', source={'pointer': '/data/id'})
-            if json_data['data']['type'] != related_type_:
-                raise InvalidType('The type field does not match the resource type', source={'pointer': '/data/type'})
-        if isinstance(json_data['data'], list):
-            for obj in json_data['data']:
-                if 'type' not in obj:
-                    raise BadRequest('Missing type in "data" node', source={'pointer': '/data/type'})
-                if 'id' not in obj:
-                    raise BadRequest('Missing id in "data" node', source={'pointer': '/data/id'})
-                if obj['type'] != related_type_:
-                    raise InvalidType('The type provided does not match the resource type',
-                                      source={'pointer': '/data/type'})
-
+        json_data = self._get_validated_json_payload(related_type_)
         self.before_patch(args, kwargs, json_data=json_data)
 
-        obj_, updated = self._data_layer.update_relationship(json_data,
-                                                             model_relationship_field,
-                                                             related_id_field,
-                                                             kwargs)
+        obj_, updated = self._data_layer.update_relationship(
+            json_data, model_relationship_field, related_id_field, kwargs
+        )
 
         status_code = 200
-        result = {'meta': {'message': 'Relationship successfully updated'}}
+        result = {"meta": {"message": "Relationship successfully updated"}}
 
         if updated is False:
-            result = ''
+            result = ""
             status_code = 204
 
         final_result = self.after_patch(result, status_code)
@@ -485,41 +461,20 @@ class ResourceRelationship(Resource, metaclass=ResourceMeta):
     @check_method_requirements
     def delete(self, *args, **kwargs):
         """Delete relationship(s)"""
-        json_data = request.get_json() or {}
 
         relationship_field, model_relationship_field, related_type_, related_id_field = self._get_relationship_data()
-
-        if 'data' not in json_data:
-            raise BadRequest('You must provide data with a "data" route node', source={'pointer': '/data'})
-        if isinstance(json_data['data'], dict):
-            if 'type' not in json_data['data']:
-                raise BadRequest('Missing type in "data" node', source={'pointer': '/data/type'})
-            if 'id' not in json_data['data']:
-                raise BadRequest('Missing id in "data" node', source={'pointer': '/data/id'})
-            if json_data['data']['type'] != related_type_:
-                raise InvalidType('The type field does not match the resource type', source={'pointer': '/data/type'})
-        if isinstance(json_data['data'], list):
-            for obj in json_data['data']:
-                if 'type' not in obj:
-                    raise BadRequest('Missing type in "data" node', source={'pointer': '/data/type'})
-                if 'id' not in obj:
-                    raise BadRequest('Missing id in "data" node', source={'pointer': '/data/id'})
-                if obj['type'] != related_type_:
-                    raise InvalidType('The type provided does not match the resource type',
-                                      source={'pointer': '/data/type'})
-
+        json_data = self._get_validated_json_payload(related_type_)
         self.before_delete(args, kwargs, json_data=json_data)
 
-        obj_, updated = self._data_layer.delete_relationship(json_data,
-                                                             model_relationship_field,
-                                                             related_id_field,
-                                                             kwargs)
+        obj_, updated = self._data_layer.delete_relationship(
+            json_data, model_relationship_field, related_id_field, kwargs
+        )
 
         status_code = 200
-        result = {'meta': {'message': 'Relationship successfully updated'}}
+        result = {"meta": {"message": "Relationship successfully updated"}}
 
         if updated is False:
-            result = ''
+            result = ""
             status_code = 204
 
         final_result = self.after_delete(result, status_code)
@@ -528,10 +483,10 @@ class ResourceRelationship(Resource, metaclass=ResourceMeta):
 
     def _get_relationship_data(self):
         """Get useful data for relationship management"""
-        relationship_field = request.path.split('/')[-1].replace('-', '_')
+        relationship_field = request.path.split("/")[-1].replace("-", "_")
 
         if relationship_field not in get_relationships(self.schema):
-            raise RelationNotFound("{} has no attribute {}".format(self.schema.__name__, relationship_field))
+            raise RelationNotFound(f"{self.schema.__name__} has no attribute {relationship_field}")
 
         related_type_ = self.schema._declared_fields[relationship_field].type_
         related_id_field = self.schema._declared_fields[relationship_field].id_field

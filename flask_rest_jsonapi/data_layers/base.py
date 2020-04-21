@@ -1,42 +1,48 @@
-"""The base class of a data layer. If you want to create your own data layer you must inherite from this base class"""
+"""
+The base class of a data layer.
+If you want to create your own data layer
+you must inherit from this base class
+"""
 
 import types
 
 
-class BaseDataLayer(object):
+class BaseDataLayer:
     """Base class of a data layer"""
 
-    REWRITABLE_METHODS = ('query',
-                          'before_create_object',
-                          'after_create_object',
-                          'before_get_object',
-                          'after_get_object',
-                          'before_get_collection',
-                          'after_get_collection',
-                          'before_update_object',
-                          'after_update_object',
-                          'before_delete_object',
-                          'after_delete_object',
-                          'before_create_relationship',
-                          'after_create_relationship',
-                          'before_get_relationship',
-                          'after_get_relationship',
-                          'before_update_relationship',
-                          'after_update_relationship',
-                          'before_delete_relationship',
-                          'after_delete_relationship',
-                          'retrieve_object_query')
+    REWRITABLE_METHODS = (
+        "query",
+        "before_create_object",
+        "after_create_object",
+        "before_get_object",
+        "after_get_object",
+        "before_get_collection",
+        "after_get_collection",
+        "before_update_object",
+        "after_update_object",
+        "before_delete_object",
+        "after_delete_object",
+        "before_create_relationship",
+        "after_create_relationship",
+        "before_get_relationship",
+        "after_get_relationship",
+        "before_update_relationship",
+        "after_update_relationship",
+        "before_delete_relationship",
+        "after_delete_relationship",
+        "retrieve_object_query",
+    )
 
     def __init__(self, kwargs):
         """Intialize an data layer instance with kwargs
 
         :param dict kwargs: information about data layer instance
         """
-        if kwargs.get('methods') is not None:
-            self.bound_rewritable_methods(kwargs['methods'])
-            kwargs.pop('methods')
+        if kwargs.get("methods") is not None:
+            self.bound_rewritable_methods(kwargs["methods"])
+            kwargs.pop("methods")
 
-        kwargs.pop('class', None)
+        kwargs.pop("class", None)
 
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -253,8 +259,9 @@ class BaseDataLayer(object):
         """
         raise NotImplementedError
 
-    def after_get_relationship(self, obj, related_objects, relationship_field, related_type_, related_id_field,
-                               view_kwargs):
+    def after_get_relationship(
+        self, obj, related_objects, relationship_field, related_type_, related_id_field, view_kwargs,
+    ):
         """Make work after to get information about a relationship
 
         :param obj: an object from data layer
