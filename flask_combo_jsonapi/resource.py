@@ -17,7 +17,7 @@ from flask_combo_jsonapi.decorators import check_headers, check_method_requireme
 from flask_combo_jsonapi.schema import compute_schema, get_relationships, get_model_field
 from flask_combo_jsonapi.data_layers.base import BaseDataLayer
 from flask_combo_jsonapi.data_layers.alchemy import SqlalchemyDataLayer
-from flask_combo_jsonapi.utils import JSONEncoder
+from flask_combo_jsonapi.utils import JSONEncoder, validate_model_init_params
 
 
 class ResourceMeta(MethodViewType):
@@ -38,6 +38,14 @@ class ResourceMeta(MethodViewType):
             data_layer_cls = d["data_layer"].get("class", SqlalchemyDataLayer)
             data_layer_kwargs = d["data_layer"]
             rv._data_layer = data_layer_cls(data_layer_kwargs)
+
+            if "schema" in d and "model" in data_layer_kwargs:
+                model = data_layer_kwargs["model"]
+                schema_fields = [get_model_field(d["schema"], key) for key in d["schema"]._declared_fields.keys()]
+                invalid_params = validate_model_init_params(model=model, params_names=schema_fields)
+                if invalid_params:
+                    raise Exception(f"Construction of {name} failed. Schema '{d['schema'].__name__}' has "
+                                    f"fields={invalid_params} are not declare in {model.__name__} init parameters")
 
         rv.decorators = (check_headers,)
         if "decorators" in d:
