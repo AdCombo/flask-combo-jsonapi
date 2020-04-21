@@ -5,6 +5,10 @@ you must inherit from this base class
 """
 
 import types
+from typing import TYPE_CHECKING, Optional
+
+if TYPE_CHECKING:
+    from flask_rest_jsonapi.resource import Resource
 
 
 class BaseDataLayer:
@@ -38,6 +42,11 @@ class BaseDataLayer:
 
         :param dict kwargs: information about data layer instance
         """
+
+        # initing this attribute here in the first place
+        # because it can be easily overridden by kwargs below
+        self.resource: Optional['Resource'] = None
+
         if kwargs.get("methods") is not None:
             self.bound_rewritable_methods(kwargs["methods"])
             kwargs.pop("methods")
@@ -46,6 +55,17 @@ class BaseDataLayer:
 
         for key, value in kwargs.items():
             setattr(self, key, value)
+
+    def post_init(self):
+        """
+        Post init stage.
+
+        At this moment self.resource is already defined
+        and the layer can do any post init stuff here
+
+        NOTE that the data layer is inited for each request
+        :return:
+        """
 
     def create_object(self, data, view_kwargs):
         """Create an object

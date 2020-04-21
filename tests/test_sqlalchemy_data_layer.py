@@ -438,6 +438,23 @@ def computer_list(session, computer_model, computer_schema, query):
 
 
 @pytest.fixture(scope="module")
+def fixed_count_for_collection_count():
+    return 42
+
+
+@pytest.fixture(scope="module")
+def computer_list_resource_with_disable_collection_count(
+    session, computer_model, computer_schema, fixed_count_for_collection_count
+):
+    class ComputerList(ResourceList):
+        disable_collection_count = True, fixed_count_for_collection_count
+        schema = computer_schema
+        data_layer = {"model": computer_model, "session": session}
+
+    yield ComputerList
+
+
+@pytest.fixture(scope="module")
 def computer_detail(session, computer_model, dummy_decorator, computer_schema):
     class ComputerDetail(ResourceDetail):
         schema = computer_schema
@@ -496,6 +513,7 @@ def register_routes(
     person_list_without_schema,
     computer_list,
     computer_detail,
+    computer_list_resource_with_disable_collection_count,
     computer_owner,
     string_json_attribute_person_detail,
     string_json_attribute_person_list,
@@ -510,6 +528,12 @@ def register_routes(
     api.route(person_list_raise_exception, "person_list_exception", "/persons_exception")
     api.route(person_list_response, "person_list_response", "/persons_response")
     api.route(person_list_without_schema, "person_list_without_schema", "/persons_without_schema")
+    api.route(
+        computer_list_resource_with_disable_collection_count,
+        "computer_list_with_disabled_count",
+        "/computers_with_disabled_count",
+        "/persons/<int:person_id>/computers_with_disabled_count",
+    )
     api.route(computer_list, "computer_list", "/computers", "/persons/<int:person_id>/computers")
     api.route(computer_detail, "computer_detail", "/computers/<int:id>")
     api.route(computer_owner, "computer_owner", "/computers/<int:id>/relationships/owner")
@@ -1684,3 +1708,15 @@ def test_relationship_containing_hyphens(client, register_routes, person_compute
         f"/persons/{person.person_id}/relationships/computers-owned", content_type="application/vnd.api+json"
     )
     assert response.status_code == 200
+
+
+def test__sqlalchemy_data_layer__disable_collection_count(client, fixed_count_for_collection_count):
+    """
+    :param client:
+    :param fixed_count_for_collection_count:
+    :return:
+    """
+    response = client.get(f"/computers_with_disabled_count", content_type="application/vnd.api+json")
+    assert response.status_code == 200
+    assert response.json
+    assert response.json["meta"]["count"] == fixed_count_for_collection_count

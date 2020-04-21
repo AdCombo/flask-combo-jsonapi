@@ -50,6 +50,37 @@ class SqlalchemyDataLayer(BaseDataLayer):
                 f"You must provide a model in data_layer_kwargs to use sqlalchemy data layer in {self.resource.__name__}"
             )
 
+        self.disable_collection_count: bool = False
+        self.default_collection_count: int = -1
+
+    def post_init(self):
+        """
+        Checking some props here
+        :return:
+        """
+        if self.resource is None:
+            # if working outside the resource, it's not assigned here
+            return
+
+        if not hasattr(self.resource, "disable_collection_count") or self.resource.disable_collection_count is False:
+            return
+
+        params = self.resource.disable_collection_count
+
+        if isinstance(params, (bool, int)):
+            self.disable_collection_count = bool(params)
+
+        if isinstance(params, (tuple, list)):
+            try:
+                self.disable_collection_count, self.default_collection_count = params
+            except ValueError:
+                raise ValueError(
+                    "Resource's attribute `disable_collection_count` "
+                    "has to be bool or list/tuple with exactly 2 values!\n"
+                    "For example `disable_collection_count = (True, 999)`"
+                )
+        # just ignoring other types, we don't know how to process them
+
     def create_object(self, data, view_kwargs):
         """Create an object through sqlalchemy
 
@@ -125,7 +156,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
 
         query = self.retrieve_object_query(view_kwargs, filter_field, filter_value)
 
-        if hasattr(self, "resource"):
+        if self.resource is not None:
             for i_plugins in self.resource.plugins:
                 try:
                     query = i_plugins.data_layer_get_object_update_query(
@@ -145,6 +176,18 @@ class SqlalchemyDataLayer(BaseDataLayer):
         self.after_get_object(obj, view_kwargs)
 
         return obj
+
+    def get_collection_count(self, query, qs, view_kwargs) -> int:
+        """
+        :param query: SQLAlchemy query
+        :param qs: QueryString
+        :param view_kwargs: view kwargs
+        :return:
+        """
+        if self.disable_collection_count is True:
+            return self.default_collection_count
+
+        return query.count()
 
     def get_collection(self, qs, view_kwargs):
         """Retrieve a collection of objects through sqlalchemy
@@ -174,7 +217,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
         if qs.sorting:
             query = self.sort_query(query, qs.sorting)
 
-        object_count = query.count()
+        objects_count = self.get_collection_count(query, qs, view_kwargs)
 
         if getattr(self, "eagerload_includes", True):
             query = self.eagerload_includes(query, qs)
@@ -185,7 +228,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
 
         collection = self.after_get_collection(collection, qs, view_kwargs)
 
-        return object_count, collection
+        return objects_count, collection
 
     def update_object(self, obj, data, view_kwargs):
         """Update an object through sqlalchemy
