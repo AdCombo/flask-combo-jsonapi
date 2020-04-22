@@ -1,10 +1,8 @@
-dist: trusty
 language: python
 python:
-  - '2.7'
-  - '3.4'
-  - '3.5'
-  - 'pypy'
+  - "3.6"
+  - "3.7"
+  - "3.8"
 install:
   - pip install -r requirements.txt
   - pip install coveralls coverage
@@ -12,6 +10,8 @@ install:
   - pip install pytest --upgrade
 script:
   - python setup.py install
-  - coverage run --source flask_rest_jsonapi -m pytest -v
+  - coverage run --source flask_combo_jsonapi -m pytest -v
 after_success:
   - coveralls
+
+# TODO: create separate jobs for tests and deploy

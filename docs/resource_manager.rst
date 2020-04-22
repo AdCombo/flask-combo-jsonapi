@@ -3,11 +3,11 @@
 Resource Manager
 ================
 
-.. currentmodule:: flask_rest_jsonapi
+.. currentmodule:: flask_combo_jsonapi
 
 Resource manager is the link between your logical data abstraction, your data layer and optionally other software. It is the place where logic management of your resource is located.
 
-Flask-REST-JSONAPI provides 3 kinds of resource manager with default methods implementation according to the JSONAPI 1.0 specification:
+Flask-COMBO-JSONAPI provides 3 kinds of resource manager with default methods implementation according to the JSONAPI 1.0 specification:
 
 * **ResourceList**: provides get and post methods to retrieve a collection of objects or create one.
 * **ResourceDetail**: provides get, patch and delete methods to retrieve details of an object, update an object and delete an object
@@ -27,7 +27,7 @@ Example:
 
 .. code-block:: python
 
-    from flask_rest_jsonapi import ResourceList
+    from flask_combo_jsonapi import ResourceList
     from your_project.schemas import PersonSchema
     from your_project.models import Person
     from your_project.extensions import db
@@ -67,7 +67,7 @@ Example:
 
 .. code-block:: python
 
-    from flask_rest_jsonapi import ResourceDetail
+    from flask_combo_jsonapi import ResourceDetail
     from your_project.schemas import PersonSchema
     from your_project.models import Person
     from your_project.security import login_required
@@ -100,7 +100,7 @@ Example:
 
 .. code-block:: python
 
-    from flask_rest_jsonapi import ResourceList
+    from flask_combo_jsonapi import ResourceList
     from your_project.schemas import PersonSchema
     from your_project.models import Person
     from your_project.extensions import db
@@ -121,7 +121,7 @@ Example:
 
 .. code-block:: python
 
-    from flask_rest_jsonapi import ResourceDetail
+    from flask_combo_jsonapi import ResourceDetail
     from your_project.schemas import PersonSchema
     from your_project.models import Person
     from your_project.extensions import db
@@ -142,7 +142,7 @@ Example:
 
 .. code-block:: python
 
-    from flask_rest_jsonapi import ResourceRelationship
+    from flask_combo_jsonapi import ResourceRelationship
     from your_project.schemas import PersonSchema
     from your_project.models import Person
     from your_project.extensions import db

@@ -3,7 +3,7 @@
 Routing
 =======
 
-.. currentmodule:: flask_rest_jsonapi
+.. currentmodule:: flask_combo_jsonapi
 
 The routing system is very simple and fits this pattern ::
 
@@ -14,7 +14,7 @@ Example:
 .. code-block:: python
 
     # all required imports are not displayed in this example
-    from flask_rest_jsonapi import Api
+    from flask_combo_jsonapi import Api
 
     api = Api()
     api.route(PersonList, 'person_list', '/persons')

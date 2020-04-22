@@ -3,7 +3,7 @@
 Sorting
 =======
 
-.. currentmodule:: flask_rest_jsonapi
+.. currentmodule:: flask_combo_jsonapi
 
 You can sort results with querystring parameter named "sort"
 

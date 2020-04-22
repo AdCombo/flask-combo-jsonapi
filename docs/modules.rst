@@ -1,7 +1,7 @@
-flask-rest-jsonapi
+flask-combo-jsonapi
 ==================
 
 .. toctree::
    :maxdepth: 4
 
-   flask-rest-jsonapi
+   flask-combo-jsonapi

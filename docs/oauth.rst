@@ -3,16 +3,16 @@
 OAuth
 =====
 
-.. currentmodule:: flask_rest_jsonapi
+.. currentmodule:: flask_combo_jsonapi
 
-Flask-REST-JSONAPI support OAuth via `Flask-OAuthlib <https://github.com/lepture/flask-oauthlib>`_
+Flask-COMBO-JSONAPI support OAuth via `Flask-OAuthlib <https://github.com/lepture/flask-oauthlib>`_
 
 Example:
 
 .. code-block:: python
 
     from flask import Flask
-    from flask_rest_jsonapi import Api
+    from flask_combo_jsonapi import Api
     from flask_oauthlib.provider import OAuth2Provider
 
     app = Flask(__name__)
@@ -23,7 +23,7 @@ Example:
     api.oauth_manager(oauth2)
 
 
-In this example Flask-REST-JSONAPI will protect all your resource methods with this decorator ::
+In this example Flask-COMBO-JSONAPI will protect all your resource methods with this decorator ::
 
     oauth2.require_oauth(<scope>)
 
@@ -61,7 +61,7 @@ Usage example:
 .. code-block:: python
 
     from flask import Flask
-    from flask_rest_jsonapi import Api
+    from flask_combo_jsonapi import Api
     from flask_oauthlib.provider import OAuth2Provider
 
     app = Flask(__name__)
@@ -82,7 +82,7 @@ Example:
 
 .. code-block:: python
 
-    from flask_rest_jsonapi import ResourceList
+    from flask_combo_jsonapi import ResourceList
     from your_project.extensions import oauth2
 
     class PersonList(ResourceList):

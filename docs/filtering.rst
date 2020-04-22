@@ -3,9 +3,9 @@
 Filtering
 =========
 
-.. currentmodule:: flask_rest_jsonapi
+.. currentmodule:: flask_combo_jsonapi
 
-Flask-REST-JSONAPI as a very flexible filtering system. The filtering system is completely related to the data layer used by the ResourceList manager. I will explain the filtering interface for SQLAlchemy data layer but you can use the same interface to your filtering implementation of your custom data layer. The only requirement is that you have to use the "filter" querystring parameter to make filtering according to the JSONAPI 1.0 specification.
+Flask-COMBO-JSONAPI as a very flexible filtering system. The filtering system is completely related to the data layer used by the ResourceList manager. I will explain the filtering interface for SQLAlchemy data layer but you can use the same interface to your filtering implementation of your custom data layer. The only requirement is that you have to use the "filter" querystring parameter to make filtering according to the JSONAPI 1.0 specification.
 
 .. note::
 
