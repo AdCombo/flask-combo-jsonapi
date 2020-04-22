@@ -3,7 +3,7 @@
 Include related objects
 =======================
 
-.. currentmodule:: flask_rest_jsonapi
+.. currentmodule:: flask_combo_jsonapi
 
 You can include related object(s) details to responses with the querystring parameter named "include". You can use "include" parameter on any kind of route (classical CRUD route or relationships route) and any kind of http methods as long as method return data.
 

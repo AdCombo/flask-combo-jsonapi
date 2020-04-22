@@ -3,7 +3,7 @@
 Sparse fieldsets
 ================
 
-.. currentmodule:: flask_rest_jsonapi
+.. currentmodule:: flask_combo_jsonapi
 
 You can restrict the fields returned by api with the querystring parameter called "fields". It is very useful for performance purpose because fields not returned are not resolved by api. You can use "fields" parameter on any kind of route (classical CRUD route or relationships route) and any kind of http methods as long as method return data.
 

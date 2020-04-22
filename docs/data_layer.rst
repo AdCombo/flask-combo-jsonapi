@@ -3,11 +3,11 @@
 Data layer
 ==========
 
-.. currentmodule:: flask_rest_jsonapi
+.. currentmodule:: flask_combo_jsonapi
 
 | The data layer is a CRUD interface between resource manager and data. It is a very flexible system to use any ORM or data storage. You can even create a data layer that use multiple ORMs and data storage to manage your own objects. The data layer implements a CRUD interface for objects and relationships. It also manage pagination, filtering and sorting.
 |
-| Flask-REST-JSONAPI has a full featured data layer that use the popular ORM `SQLAlchemy <https://www.sqlalchemy.org/>`_.
+| Flask-COMBO-JSONAPI has a full featured data layer that use the popular ORM `SQLAlchemy <https://www.sqlalchemy.org/>`_.
 
 .. note::
 
@@ -19,7 +19,7 @@ Example:
 
 .. code-block:: python
 
-    from flask_rest_jsonapi import ResourceList
+    from flask_combo_jsonapi import ResourceList
     from your_project.schemas import PersonSchema
     from your_project.models import Person
 
@@ -32,15 +32,15 @@ You can also plug additional methods to your data layer in the resource manager.
 
 * query: the "query" additional method takes view_kwargs as parameter and return an alternative query to retrieve the collection of objects in the GET method of the ResourceList manager.
 
-* pre / post process methods: all CRUD and relationship(s) operations have a pre / post process methods. Thanks to it you can make additional work before and after each operations of the data layer. Parameters of each pre / post process methods are available in the `flask_rest_jsonapi.data_layers.base.Base <https://github.com/miLibris/flask-rest-jsonapi/blob/master/flask_rest_jsonapi/data_layers/base.py>`_ base class.
+* pre / post process methods: all CRUD and relationship(s) operations have a pre / post process methods. Thanks to it you can make additional work before and after each operations of the data layer. Parameters of each pre / post process methods are available in the `flask_combo_jsonapi.data_layers.base.Base <https://github.com/AdCombo/flask-combo-jsonapi/blob/master/flask_combo_jsonapi/data_layers/base.py>`_ base class.
 
 Example:
 
 .. code-block:: python
 
     from sqlalchemy.orm.exc import NoResultFound
-    from flask_rest_jsonapi import ResourceList
-    from flask_rest_jsonapi.exceptions import ObjectNotFound
+    from flask_combo_jsonapi import ResourceList
+    from flask_combo_jsonapi.exceptions import ObjectNotFound
     from your_project.models import Computer, Person
 
     class ComputerList(ResourceList):
@@ -75,8 +75,8 @@ Example:
 .. code-block:: python
 
     from sqlalchemy.orm.exc import NoResultFound
-    from flask_rest_jsonapi import ResourceList
-    from flask_rest_jsonapi.exceptions import ObjectNotFound
+    from flask_combo_jsonapi import ResourceList
+    from flask_combo_jsonapi.exceptions import ObjectNotFound
     from your_project.models import Computer, Person
     from your_project.additional_methods.computer import before_create_object
 
@@ -105,13 +105,13 @@ By default SQLAlchemy eagerload related data specified in include querystring pa
 Custom data layer
 -----------------
 
-Like I said previously you can create and use your own data layer. A custom data layer must inherit from `flask_rest_jsonapi.data_layers.base.Base <https://github.com/miLibris/flask-rest-jsonapi/blob/master/flask_rest_jsonapi/data_layers/base.py>`_. You can see the full scope of possibilities of a data layer in this base class.
+Like I said previously you can create and use your own data layer. A custom data layer must inherit from `flask_combo_jsonapi.data_layers.base.Base <https://github.com/AdCombo/flask-combo-jsonapi/blob/master/flask_combo_jsonapi/data_layers/base.py>`_. You can see the full scope of possibilities of a data layer in this base class.
 
 Usage example:
 
 .. code-block:: python
 
-    from flask_rest_jsonapi import ResourceList
+    from flask_combo_jsonapi import ResourceList
     from your_project.schemas import PersonSchema
     from your_project.data_layers import MyCustomDataLayer
 

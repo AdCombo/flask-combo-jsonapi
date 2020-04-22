@@ -1,98 +1,98 @@
-flask_rest_jsonapi package
+flask_combo_jsonapi package
 ==========================
 
-flask_rest_jsonapi.data_layers.filtering.alchemy module
+flask_combo_jsonapi.data_layers.filtering.alchemy module
 -------------------------------------------------------
 
-.. automodule:: flask_rest_jsonapi.data_layers.filtering.alchemy
+.. automodule:: flask_combo_jsonapi.data_layers.filtering.alchemy
     :members:
     :undoc-members:
     :show-inheritance:
 
-flask_rest_jsonapi.data_layers.base module
+flask_combo_jsonapi.data_layers.base module
 ------------------------------------------
 
-.. automodule:: flask_rest_jsonapi.data_layers.filtering.alchemy
+.. automodule:: flask_combo_jsonapi.data_layers.filtering.alchemy
     :members:
     :undoc-members:
     :show-inheritance:
 
-flask_rest_jsonapi.data_layers.alchemy module
+flask_combo_jsonapi.data_layers.alchemy module
 ---------------------------------------------
 
-.. automodule:: flask_rest_jsonapi.data_layers.alchemy
+.. automodule:: flask_combo_jsonapi.data_layers.alchemy
     :members:
     :undoc-members:
     :show-inheritance:
 
-flask_rest_jsonapi.api module
+flask_combo_jsonapi.api module
 -----------------------------
 
-.. automodule:: flask_rest_jsonapi.api
+.. automodule:: flask_combo_jsonapi.api
     :members:
     :undoc-members:
     :show-inheritance:
 
-flask_rest_jsonapi.constants module
+flask_combo_jsonapi.constants module
 -----------------------------------
 
-.. automodule:: flask_rest_jsonapi.constants
+.. automodule:: flask_combo_jsonapi.constants
     :members:
     :undoc-members:
     :show-inheritance:
 
-flask_rest_jsonapi.decorators module
+flask_combo_jsonapi.decorators module
 ------------------------------------
 
-.. automodule:: flask_rest_jsonapi.decorators
+.. automodule:: flask_combo_jsonapi.decorators
     :members:
     :undoc-members:
     :show-inheritance:
 
-flask_rest_jsonapi.errors module
+flask_combo_jsonapi.errors module
 --------------------------------
 
-.. automodule:: flask_rest_jsonapi.errors
+.. automodule:: flask_combo_jsonapi.errors
     :members:
     :undoc-members:
     :show-inheritance:
 
-flask_rest_jsonapi.exceptions module
+flask_combo_jsonapi.exceptions module
 ------------------------------------
 
-.. automodule:: flask_rest_jsonapi.exceptions
+.. automodule:: flask_combo_jsonapi.exceptions
     :members:
     :undoc-members:
     :show-inheritance:
 
-flask_rest_jsonapi.pagination module
+flask_combo_jsonapi.pagination module
 ------------------------------------
 
-.. automodule:: flask_rest_jsonapi.pagination
+.. automodule:: flask_combo_jsonapi.pagination
     :members:
     :undoc-members:
     :show-inheritance:
 
-flask_rest_jsonapi.querystring module
+flask_combo_jsonapi.querystring module
 -------------------------------------
 
-.. automodule:: flask_rest_jsonapi.querystring
+.. automodule:: flask_combo_jsonapi.querystring
     :members:
     :undoc-members:
     :show-inheritance:
 
-flask_rest_jsonapi.resource module
+flask_combo_jsonapi.resource module
 ----------------------------------
 
-.. automodule:: flask_rest_jsonapi.resource
+.. automodule:: flask_combo_jsonapi.resource
     :members:
     :undoc-members:
     :show-inheritance:
 
-flask_rest_jsonapi.schema module
+flask_combo_jsonapi.schema module
 --------------------------------
 
-.. automodule:: flask_rest_jsonapi.schema
+.. automodule:: flask_combo_jsonapi.schema
     :members:
     :undoc-members:
     :show-inheritance:

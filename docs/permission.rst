@@ -3,16 +3,16 @@
 Permission
 ==========
 
-.. currentmodule:: flask_rest_jsonapi
+.. currentmodule:: flask_combo_jsonapi
 
-Flask-REST-JSONAPI provides a very agnostic permission system.
+Flask-COMBO-JSONAPI provides a very agnostic permission system.
 
 Example:
 
 .. code-block:: python
 
     from flask import Flask
-    from flask_rest_jsonapi import Api
+    from flask_combo_jsonapi import Api
     from your_project.permission import permission_manager
 
     app = Flask(__name__)
@@ -39,7 +39,7 @@ The permission manager must be a function that looks like this:
 
 .. note::
 
-    Flask-REST-JSONAPI use a decorator to check permission for each method named has_permission. You can provide args and kwargs to this decorators so you can retrieve this args and kwargs in the permission_manager. The default usage of the permission system does not provides any args or kwargs to the decorator.
+    Flask-COMBO-JSONAPI use a decorator to check permission for each method named has_permission. You can provide args and kwargs to this decorators so you can retrieve this args and kwargs in the permission_manager. The default usage of the permission system does not provides any args or kwargs to the decorator.
 
 If permission is denied I recommand to raise exception like that:
 
@@ -54,7 +54,7 @@ You can disable the permission system or make custom permission checking managem
 
 .. code-block:: python
 
-    from flask_rest_jsonapi import ResourceList
+    from flask_combo_jsonapi import ResourceList
     from your_project.extensions import api
 
     class PersonList(ResourceList):
@@ -73,7 +73,7 @@ Example:
 .. code-block:: python
 
     from flask import Flask
-    from flask_rest_jsonapi import Api
+    from flask_combo_jsonapi import Api
     from flask_oauthlib.provider import OAuth2Provider
     from your_project.permission import permission_manager
 

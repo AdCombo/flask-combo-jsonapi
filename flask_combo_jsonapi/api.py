@@ -7,9 +7,9 @@ from functools import wraps
 
 from flask import request, abort
 
-from flask_rest_jsonapi.decorators import jsonapi_exception_formatter
-from flask_rest_jsonapi.exceptions import PluginMethodNotImplementedError
-from flask_rest_jsonapi.resource import ResourceList, ResourceRelationship
+from flask_combo_jsonapi.decorators import jsonapi_exception_formatter
+from flask_combo_jsonapi.exceptions import PluginMethodNotImplementedError
+from flask_combo_jsonapi.resource import ResourceList, ResourceRelationship
 
 
 class Api(object):
@@ -70,7 +70,7 @@ class Api(object):
     def route(self, resource, view, *urls, **kwargs):
         """Create an api view.
 
-        :param Resource resource: a resource class inherited from flask_rest_jsonapi.resource.Resource
+        :param Resource resource: a resource class inherited from flask_combo_jsonapi.resource.Resource
         :param str view: the view name
         :param str urls: the urls of the view
         :param kwargs: additional options of the route

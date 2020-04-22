@@ -5,8 +5,8 @@ from marshmallow import class_registry
 from marshmallow.base import SchemaABC
 from marshmallow_jsonapi.fields import Relationship, List, Nested
 
-from flask_rest_jsonapi.exceptions import InvalidInclude
-from flask_rest_jsonapi.utils import SPLIT_REL
+from flask_combo_jsonapi.exceptions import InvalidInclude
+from flask_combo_jsonapi.utils import SPLIT_REL
 
 
 def compute_schema(schema_cls, default_kwargs, qs, include):

@@ -8,7 +8,7 @@ import types
 from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
-    from flask_rest_jsonapi.resource import Resource
+    from flask_combo_jsonapi.resource import Resource
 
 
 class BaseDataLayer:

@@ -10,18 +10,18 @@ from marshmallow import Schema as MarshmallowSchema
 from marshmallow_jsonapi import fields
 from marshmallow import ValidationError
 
-from flask_rest_jsonapi import Api, ResourceList, ResourceDetail, ResourceRelationship, JsonApiException
-from flask_rest_jsonapi.pagination import add_pagination_links
-from flask_rest_jsonapi.exceptions import RelationNotFound, InvalidSort, InvalidFilters, InvalidInclude, BadRequest
-from flask_rest_jsonapi.querystring import QueryStringManager as QSManager
-from flask_rest_jsonapi.data_layers.alchemy import SqlalchemyDataLayer
-from flask_rest_jsonapi.data_layers.base import BaseDataLayer
-from flask_rest_jsonapi.data_layers.filtering.alchemy import Node
-from flask_rest_jsonapi.utils import SPLIT_REL
+from flask_combo_jsonapi import Api, ResourceList, ResourceDetail, ResourceRelationship, JsonApiException
+from flask_combo_jsonapi.pagination import add_pagination_links
+from flask_combo_jsonapi.exceptions import RelationNotFound, InvalidSort, InvalidFilters, InvalidInclude, BadRequest
+from flask_combo_jsonapi.querystring import QueryStringManager as QSManager
+from flask_combo_jsonapi.data_layers.alchemy import SqlalchemyDataLayer
+from flask_combo_jsonapi.data_layers.base import BaseDataLayer
+from flask_combo_jsonapi.data_layers.filtering.alchemy import Node
+from flask_combo_jsonapi.utils import SPLIT_REL
 
-import flask_rest_jsonapi.decorators
-import flask_rest_jsonapi.resource
-import flask_rest_jsonapi.schema
+import flask_combo_jsonapi.decorators
+import flask_combo_jsonapi.resource
+import flask_combo_jsonapi.schema
 
 
 @pytest.fixture(scope="module")
@@ -599,9 +599,9 @@ def test_Node(person_model, person_schema, monkeypatch):
 def test_check_method_requirements(monkeypatch):
     self = type("self", (object,), dict())
     request = type("request", (object,), dict(method="GET"))
-    monkeypatch.setattr(flask_rest_jsonapi.decorators, "request", request)
+    monkeypatch.setattr(flask_combo_jsonapi.decorators, "request", request)
     with pytest.raises(Exception):
-        flask_rest_jsonapi.decorators.check_method_requirements(lambda: 1)(self())
+        flask_combo_jsonapi.decorators.check_method_requirements(lambda: 1)(self())
 
 
 def test_json_api_exception():
@@ -636,11 +636,11 @@ def test_resource(app, person_model, person_schema, session, monkeypatch):
         rl.schema = person_schema
         rd._data_layer = dl
         rd.schema = person_schema
-        monkeypatch.setattr(flask_rest_jsonapi.resource, "request", request)
-        monkeypatch.setattr(flask_rest_jsonapi.decorators, "current_app", app)
-        monkeypatch.setattr(flask_rest_jsonapi.decorators, "request", request)
+        monkeypatch.setattr(flask_combo_jsonapi.resource, "request", request)
+        monkeypatch.setattr(flask_combo_jsonapi.decorators, "current_app", app)
+        monkeypatch.setattr(flask_combo_jsonapi.decorators, "request", request)
         monkeypatch.setattr(rl.schema, "load", schema_load_mock)
-        r = super(flask_rest_jsonapi.resource.Resource, ResourceList).__new__(ResourceList)
+        r = super(flask_combo_jsonapi.resource.Resource, ResourceList).__new__(ResourceList)
         with pytest.raises(Exception):
             r.dispatch_request()
         rl.post()
@@ -651,16 +651,16 @@ def test_compute_schema(person_schema):
     query_string = {"page[number]": "3", "fields[person]": list()}
     qsm = QSManager(query_string, person_schema)
     with pytest.raises(InvalidInclude):
-        flask_rest_jsonapi.schema.compute_schema(person_schema, dict(), qsm, ["id"])
-    flask_rest_jsonapi.schema.compute_schema(person_schema, dict(only=list()), qsm, list())
+        flask_combo_jsonapi.schema.compute_schema(person_schema, dict(), qsm, ["id"])
+    flask_combo_jsonapi.schema.compute_schema(person_schema, dict(only=list()), qsm, list())
 
 
 def test_compute_schema_propagate_context(person_schema, computer_schema):
     query_string = {}
     qsm = QSManager(query_string, person_schema)
-    schema = flask_rest_jsonapi.schema.compute_schema(person_schema, dict(), qsm, ["computers"])
+    schema = flask_combo_jsonapi.schema.compute_schema(person_schema, dict(), qsm, ["computers"])
     assert schema.declared_fields["computers"].__dict__["_Relationship__schema"].__dict__["context"] == dict()
-    schema = flask_rest_jsonapi.schema.compute_schema(person_schema, dict(context=dict(foo="bar")), qsm, ["computers"])
+    schema = flask_combo_jsonapi.schema.compute_schema(person_schema, dict(context=dict(foo="bar")), qsm, ["computers"])
     assert schema.declared_fields["computers"].__dict__["_Relationship__schema"].__dict__["context"] == dict(foo="bar")
 
 

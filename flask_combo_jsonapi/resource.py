@@ -10,14 +10,14 @@ from flask.views import MethodView, MethodViewType
 from marshmallow_jsonapi.exceptions import IncorrectTypeError
 from marshmallow import ValidationError
 
-from flask_rest_jsonapi.querystring import QueryStringManager as QSManager
-from flask_rest_jsonapi.pagination import add_pagination_links
-from flask_rest_jsonapi.exceptions import InvalidType, BadRequest, RelationNotFound, PluginMethodNotImplementedError
-from flask_rest_jsonapi.decorators import check_headers, check_method_requirements, jsonapi_exception_formatter
-from flask_rest_jsonapi.schema import compute_schema, get_relationships, get_model_field
-from flask_rest_jsonapi.data_layers.base import BaseDataLayer
-from flask_rest_jsonapi.data_layers.alchemy import SqlalchemyDataLayer
-from flask_rest_jsonapi.utils import JSONEncoder
+from flask_combo_jsonapi.querystring import QueryStringManager as QSManager
+from flask_combo_jsonapi.pagination import add_pagination_links
+from flask_combo_jsonapi.exceptions import InvalidType, BadRequest, RelationNotFound, PluginMethodNotImplementedError
+from flask_combo_jsonapi.decorators import check_headers, check_method_requirements, jsonapi_exception_formatter
+from flask_combo_jsonapi.schema import compute_schema, get_relationships, get_model_field
+from flask_combo_jsonapi.data_layers.base import BaseDataLayer
+from flask_combo_jsonapi.data_layers.alchemy import SqlalchemyDataLayer
+from flask_combo_jsonapi.utils import JSONEncoder
 
 
 class ResourceMeta(MethodViewType):

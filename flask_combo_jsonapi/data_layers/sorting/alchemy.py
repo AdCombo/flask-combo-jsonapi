@@ -4,10 +4,10 @@ from typing import Any, List, Tuple
 from sqlalchemy import sql
 from sqlalchemy.orm import aliased
 
-from flask_rest_jsonapi.data_layers.shared import create_filters_or_sorts
-from flask_rest_jsonapi.exceptions import InvalidFilters, PluginMethodNotImplementedError, InvalidSort
-from flask_rest_jsonapi.schema import get_relationships, get_model_field
-from flask_rest_jsonapi.utils import SPLIT_REL
+from flask_combo_jsonapi.data_layers.shared import create_filters_or_sorts
+from flask_combo_jsonapi.exceptions import InvalidFilters, PluginMethodNotImplementedError, InvalidSort
+from flask_combo_jsonapi.schema import get_relationships, get_model_field
+from flask_combo_jsonapi.utils import SPLIT_REL
 
 
 Sort = sql.elements.BinaryExpression

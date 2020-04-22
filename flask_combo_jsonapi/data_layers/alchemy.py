@@ -9,9 +9,9 @@ from marshmallow import class_registry
 from marshmallow.base import SchemaABC
 
 from flask import current_app
-from flask_rest_jsonapi.data_layers.base import BaseDataLayer
-from flask_rest_jsonapi.data_layers.sorting.alchemy import create_sorts
-from flask_rest_jsonapi.exceptions import (
+from flask_combo_jsonapi.data_layers.base import BaseDataLayer
+from flask_combo_jsonapi.data_layers.sorting.alchemy import create_sorts
+from flask_combo_jsonapi.exceptions import (
     RelationNotFound,
     RelatedObjectNotFound,
     JsonApiException,
@@ -20,15 +20,15 @@ from flask_rest_jsonapi.exceptions import (
     InvalidType,
     PluginMethodNotImplementedError,
 )
-from flask_rest_jsonapi.data_layers.filtering.alchemy import create_filters
-from flask_rest_jsonapi.schema import (
+from flask_combo_jsonapi.data_layers.filtering.alchemy import create_filters
+from flask_combo_jsonapi.schema import (
     get_model_field,
     get_related_schema,
     get_relationships,
     get_nested_fields,
     get_schema_field,
 )
-from flask_rest_jsonapi.utils import SPLIT_REL
+from flask_combo_jsonapi.utils import SPLIT_REL
 
 
 class SqlalchemyDataLayer(BaseDataLayer):

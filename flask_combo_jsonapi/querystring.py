@@ -4,9 +4,9 @@ import simplejson as json
 
 from flask import current_app
 
-from flask_rest_jsonapi.exceptions import BadRequest, InvalidFilters, InvalidSort, InvalidField, InvalidInclude
-from flask_rest_jsonapi.schema import get_model_field, get_relationships, get_schema_from_type
-from flask_rest_jsonapi.utils import SPLIT_REL
+from flask_combo_jsonapi.exceptions import BadRequest, InvalidFilters, InvalidSort, InvalidField, InvalidInclude
+from flask_combo_jsonapi.schema import get_model_field, get_relationships, get_schema_from_type
+from flask_combo_jsonapi.utils import SPLIT_REL
 
 
 class QueryStringManager(object):
