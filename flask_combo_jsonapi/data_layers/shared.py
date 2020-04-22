@@ -2,7 +2,7 @@ from typing import Any
 
 from marshmallow import fields, ValidationError
 
-from flask_rest_jsonapi.exceptions import InvalidFilters
+from flask_combo_jsonapi.exceptions import InvalidFilters
 
 
 # Fields that are not of array type

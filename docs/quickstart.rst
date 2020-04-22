@@ -3,24 +3,24 @@
 Quickstart
 ==========
 
-.. currentmodule:: flask_rest_jsonapi
+.. currentmodule:: flask_combo_jsonapi
 
-It's time to write your first REST API. This guide assumes you have a working understanding of `Flask <http://flask.pocoo.org>`_, and that you have already installed both Flask and Flask-REST-JSONAPI. If not, then follow the steps in the :ref:`installation` section.
+It's time to write your first REST API. This guide assumes you have a working understanding of `Flask <http://flask.pocoo.org>`_, and that you have already installed both Flask and Flask-COMBO-JSONAPI. If not, then follow the steps in the :ref:`installation` section.
 
-In this section you will learn basic usage of Flask-REST-JSONAPI around a small tutorial that use the SQLAlchemy data layer. This tutorial show you an example of a person and his computers.
+In this section you will learn basic usage of Flask-COMBO-JSONAPI around a small tutorial that use the SQLAlchemy data layer. This tutorial show you an example of a person and his computers.
 
 First example
 -------------
 
-An example of Flask-REST-JSONAPI API looks like this:
+An example of Flask-COMBO-JSONAPI API looks like this:
 
 .. code-block:: python
 
     # -*- coding: utf-8 -*-
 
     from flask import Flask
-    from flask_rest_jsonapi import Api, ResourceDetail, ResourceList, ResourceRelationship
-    from flask_rest_jsonapi.exceptions import ObjectNotFound
+    from flask_combo_jsonapi import Api, ResourceDetail, ResourceList, ResourceRelationship
+    from flask_combo_jsonapi.exceptions import ObjectNotFound
     from flask_sqlalchemy import SQLAlchemy
     from sqlalchemy.orm.exc import NoResultFound
     from marshmallow_jsonapi.flask import Schema, Relationship

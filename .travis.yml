@@ -10,7 +10,7 @@ install:
   - pip install pytest --upgrade
 script:
   - python setup.py install
-  - coverage run --source flask_rest_jsonapi -m pytest -v
+  - coverage run --source flask_combo_jsonapi -m pytest -v
 after_success:
   - coveralls
 

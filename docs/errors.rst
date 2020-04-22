@@ -3,7 +3,7 @@
 Errors
 ======
 
-.. currentmodule:: flask_rest_jsonapi
+.. currentmodule:: flask_combo_jsonapi
 
 JSONAPI 1.0 specification recommand to return errors like that:
 
@@ -53,20 +53,20 @@ The previous example displays error located in data provided instead of this nex
       }
     }
 
-Flask-REST-JSONAPI provides two kind of helpers to achieve error displaying:
+Flask-COMBO-JSONAPI provides two kind of helpers to achieve error displaying:
 
-| * **the errors module**: you can import jsonapi_errors from the `errors module <https://github.com/miLibris/flask-rest-jsonapi/blob/master/flask_rest_jsonapi/errors.py>`_ to create the structure of a list of errors according to JSONAPI 1.0 specification
+| * **the errors module**: you can import jsonapi_errors from the `errors module <https://github.com/AdCombo/flask-combo-jsonapi/blob/master/flask_combo_jsonapi/errors.py>`_ to create the structure of a list of errors according to JSONAPI 1.0 specification
 |
-| * **the exceptions module**: you can import lot of exceptions from this `module <https://github.com/miLibris/flask-rest-jsonapi/blob/master/flask_rest_jsonapi/exceptions.py>`_ that helps you to raise exceptions that will be well formatted according to JSONAPI 1.0 specification
+| * **the exceptions module**: you can import lot of exceptions from this `module <https://github.com/AdCombo/flask-combo-jsonapi/blob/master/flask_combo_jsonapi/exceptions.py>`_ that helps you to raise exceptions that will be well formatted according to JSONAPI 1.0 specification
 
-When you create custom code for your api I recommand to use exceptions from exceptions module of Flask-REST-JSONAPI to raise errors because JsonApiException based exceptions are catched and rendered according to JSONAPI 1.0 specification.
+When you create custom code for your api I recommand to use exceptions from exceptions module of Flask-COMBO-JSONAPI to raise errors because JsonApiException based exceptions are catched and rendered according to JSONAPI 1.0 specification.
 
 Example:
 
 .. code-block:: python
 
     # all required imports are not displayed in this example
-    from flask_rest_jsonapi.exceptions import ObjectNotFound
+    from flask_combo_jsonapi.exceptions import ObjectNotFound
 
     class ComputerList(ResourceList):
         def query(self, view_kwargs):

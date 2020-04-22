@@ -3,7 +3,7 @@
 Pagination
 ==========
 
-.. currentmodule:: flask_rest_jsonapi
+.. currentmodule:: flask_combo_jsonapi
 
 When you use the default implementation of get method on a ResourceList your results will be paginated by default. Default pagination size is 30 but you can manage it from querystring parameter named "page".
 

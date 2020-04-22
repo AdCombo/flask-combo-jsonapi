@@ -3,7 +3,7 @@ from typing import List, Tuple, Dict, Any
 
 from sqlalchemy.orm import Query
 
-from flask_rest_jsonapi.exceptions import PluginMethodNotImplementedError
+from flask_combo_jsonapi.exceptions import PluginMethodNotImplementedError
 
 
 class BasePlugin(object):
