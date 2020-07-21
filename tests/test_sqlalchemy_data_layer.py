@@ -98,6 +98,7 @@ def string_json_attribute_person_model(base):
         # This model uses a String type for "json_tags" to avoid dependency on a nonstandard SQL type in testing, \
         # while still demonstrating support
         address = Column(MagicJSON)
+        tags = Column(MagicJSON)
 
     yield StringJsonAttributePerson
 
@@ -136,7 +137,10 @@ def computer_model(base):
 
 
 @pytest.fixture(scope="module")
-def engine(person_tag_model, person_single_tag_model, person_model, computer_model, string_json_attribute_person_model):
+def engine(
+        person_tag_model, person_single_tag_model, person_model,
+        computer_model, string_json_attribute_person_model
+    ):
     engine = create_engine("sqlite:///:memory:")
     person_tag_model.metadata.create_all(engine)
     person_single_tag_model.metadata.create_all(engine)
@@ -245,6 +249,7 @@ def string_json_attribute_person_schema(address_schema):
         name = fields.Str(required=True)
         birth_date = fields.DateTime()
         address = fields.Nested(address_schema, many=False)
+        tags = fields.List(fields.Dict())
 
     yield StringJsonAttributePersonSchema
 
@@ -773,6 +778,35 @@ def test_post_list_nested(client, register_routes, computer):
         response = client.post("/persons", data=json.dumps(payload), content_type="application/vnd.api+json")
         assert response.status_code == 201
         assert json.loads(response.get_data())["data"]["attributes"]["tags"][0]["key"] == "k1"
+
+def test_post_list_nested_field(client, register_routes):
+    """
+    Test a schema contains a nested field is correctly serialized and deserialized
+    """
+    payload = {
+        'data': {
+            'type': 'string_json_attribute_person',
+            'attributes': {
+                'name': 'test',
+                'tags': [
+                    {'key': 'new_key', 'value': 'new_value'}
+                ],
+            },
+        }
+    }
+    with client:
+        response = client.post(
+            '/string_json_attribute_persons',
+            data=json.dumps(payload),
+            content_type='application/vnd.api+json'
+        )
+        assert response.status_code == 201, response.json['errors']
+        assert json.loads(
+            response.get_data()
+        )['data']['attributes']['tags'][0]['key'] == 'new_key'
+        assert json.loads(
+            response.get_data()
+        )['data']['attributes']['tags'][0]['value'] == 'new_value'
 
 
 def test_post_list_single(client, register_routes, person):
