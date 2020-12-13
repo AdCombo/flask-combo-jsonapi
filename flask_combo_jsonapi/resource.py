@@ -188,7 +188,10 @@ class ResourceList(Resource, metaclass=ResourceMeta):
 
         obj = self.create_object(data, kwargs)
 
-        result = schema.dump(obj)
+        if obj is None:
+            result = {"data": None}
+        else:
+            result = schema.dump(obj)
 
         if result["data"].get("links", {}).get("self"):
             final_result = (result, 201, {"Location": result["data"]["links"]["self"]})
