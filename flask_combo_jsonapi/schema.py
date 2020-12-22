@@ -140,7 +140,7 @@ def get_related_schema(schema, field):
     :param field: the relationship field
     :return Schema: the related schema
     """
-    return schema._declared_fields[field].__dict__['_Relationship__schema']
+    return schema._declared_fields[field].schema
 
 
 def get_schema_from_type(resource_type):
