@@ -30,7 +30,7 @@ def format_http_exception(ex):
     code = getattr(ex, 'code', None)
     try:
         status = int(code)
-    except TypeError:
+    except (TypeError, ValueError):
         return
 
     api_ex = STATUS_MAP.get(status)

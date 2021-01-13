@@ -108,8 +108,8 @@ def get_nested_fields(schema, model_field=False):
 
     nested_fields = []
     for (key, value) in schema._declared_fields.items():
-        if isinstance(value, List) and isinstance(value.container, Nested) \
-                and not isinstance(value.container, Relationship):
+        if isinstance(value, List) and isinstance(value.inner, Nested) \
+                and not isinstance(value.inner, Relationship):
             nested_fields.append(key)
         elif isinstance(value, Nested) and not isinstance(value, Relationship):
             nested_fields.append(key)
@@ -140,7 +140,7 @@ def get_related_schema(schema, field):
     :param field: the relationship field
     :return Schema: the related schema
     """
-    return schema._declared_fields[field].__dict__['_Relationship__schema']
+    return schema._declared_fields[field].schema
 
 
 def get_schema_from_type(resource_type):
