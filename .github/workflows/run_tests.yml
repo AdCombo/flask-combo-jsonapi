@@ -1,0 +1,75 @@
+name: Python tests and coverage
+
+on:
+  push:
+    branches:
+      - master
+      - develop
+  pull_request:
+    branches:
+      - master
+      - develop
+
+jobs:
+  unit-tests:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.6, 3.7, 3.8, 3.9]
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install the package and dependencies
+      run: python setup.py install
+    - name: Lint with flake8
+      run: |
+        pip install flake8
+        # stop the build if there are Python syntax errors or undefined names
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    - name: Install testing dependencies
+      run: pip install pytest --upgrade
+    - name: Test with pytest and run coverage
+      run: pytest -s -vv --color=yes
+
+  coverage:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v1
+      with:
+        python-version: '3.8'
+    - name: Install the package and dependencies
+      run: python setup.py install
+    - name: Lint with flake8
+      run: |
+        pip install flake8
+        # stop the build if there are Python syntax errors or undefined names
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    - name: Install testing and coverage dependencies
+      run: |
+        pip install coveralls coverage
+        pip install -U setuptools
+        pip install pytest --upgrade
+    - name: Test with pytest with coverage
+      run: coverage run --source flask_combo_jsonapi -m pytest
+    - name: Trigger Coveralls
+      run: coveralls --service=github
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+
+# TODO later: add support for parallel builds
+#  (not needed right now, now python-version-specific code yet)
+# https://coveralls-python.readthedocs.io/en/latest/usage/configuration.html#github-actions-support
