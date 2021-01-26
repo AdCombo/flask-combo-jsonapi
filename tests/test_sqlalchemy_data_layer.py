@@ -119,6 +119,7 @@ def person_model(base):
         )
 
         computers_owned = relationship("Computer")
+        address = relationship("Address", backref="person", uselist=False)
 
     yield Person
 
@@ -137,9 +138,26 @@ def computer_model(base):
 
 
 @pytest.fixture(scope="module")
+def address_model(base):
+    class Address(base):
+
+        __tablename__ = "address"
+
+        id = Column(Integer, primary_key=True)
+        street = Column(String)
+        city = Column(String)
+        state = Column(String)
+        zip = Column(String)
+        person_id = Column(Integer, ForeignKey("person.person_id"))
+
+    yield Address
+
+
+@pytest.fixture(scope="module")
 def engine(
         person_tag_model, person_single_tag_model, person_model,
-        computer_model, string_json_attribute_person_model
+        computer_model, string_json_attribute_person_model,
+        address_model
     ):
     engine = create_engine("sqlite:///:memory:")
     person_tag_model.metadata.create_all(engine)
@@ -147,6 +165,7 @@ def engine(
     person_model.metadata.create_all(engine)
     computer_model.metadata.create_all(engine)
     string_json_attribute_person_model.metadata.create_all(engine)
+    address_model.metadata.create_all(engine)
     return engine
 
 
@@ -186,6 +205,17 @@ def computer(session, computer_model):
     session_.commit()
     yield computer_
     session_.delete(computer_)
+    session_.commit()
+
+
+@pytest.fixture()
+def address(session, address_model):
+    address_ = address_model(state='NYC')
+    session_ = session
+    session_.add(address_)
+    session_.commit()
+    yield address_
+    session_.delete(address_)
     session_.commit()
 
 
@@ -238,6 +268,29 @@ def address_schema():
 
 
 @pytest.fixture(scope="module")
+def person_address_schema():
+    class PersonAddressSchema(Schema):
+        class Meta:
+            type_ = "address"
+
+        id = fields.Str(dump_only=True)
+        street = fields.String()
+        city = fields.String()
+        state = fields.String()
+        zip = fields.String()
+
+        person = Relationship(
+            related_view="api.person_detail",
+            related_view_kwargs={"person_id": "<person.person_id>"},
+            schema="PersonSchema",
+            id_field="person_id",
+            type_="person",
+        )
+
+    yield PersonAddressSchema
+
+
+@pytest.fixture(scope="module")
 def string_json_attribute_person_schema(address_schema):
     class StringJsonAttributePersonSchema(Schema):
         class Meta:
@@ -255,7 +308,7 @@ def string_json_attribute_person_schema(address_schema):
 
 
 @pytest.fixture(scope="module")
-def person_schema(person_tag_schema, person_single_tag_schema):
+def person_schema(person_tag_schema, person_single_tag_schema, person_address_schema):
     class PersonSchema(Schema):
         class Meta:
             type_ = "person"
@@ -282,6 +335,11 @@ def person_schema(person_tag_schema, person_single_tag_schema):
             schema="ComputerSchema",
             type_="computer",
             many=True,
+        )
+
+        address = Relationship(
+            schema="PersonAddressSchema",
+            type_="address",
         )
 
     yield PersonSchema
@@ -917,6 +975,22 @@ def test_get_relationship_single_empty(session, client, register_routes, compute
         )
         response_json = json.loads(response.get_data())
         assert None is response_json["data"]
+        assert response.status_code == 200
+
+
+def test_get_include_multiple(session, client, register_routes, computer, person, address):
+    session_ = session
+    person.address = address
+    computer.person = person
+    session_.commit()
+
+    with client:
+        response = client.get(
+            "/computers/" + str(computer.id) + "?include=owner.computers,owner.address", content_type="application/vnd.api+json"
+        )
+        included = json.loads(response.data)['included']
+        types = {item['type'] for item in included}
+        assert {'person', 'computer', 'address'} == types
         assert response.status_code == 200
 
 
