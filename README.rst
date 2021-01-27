@@ -1,5 +1,5 @@
-.. image:: https://travis-ci.org/AdCombo/flask-combo-jsonapi.svg
-    :target: https://travis-ci.org/AdCombo/flask-combo-jsonapi
+.. image:: https://github.com/AdCombo/flask-combo-jsonapi/workflows/Python%20tests%20and%20coverage/badge.svg
+    :target: https://github.com/AdCombo/flask-combo-jsonapi/actions
 .. image:: https://coveralls.io/repos/github/AdCombo/flask-combo-jsonapi/badge.svg
     :target: https://coveralls.io/github/AdCombo/flask-combo-jsonapi
 
