@@ -185,7 +185,7 @@ class ResourceList(Resource, metaclass=ResourceMeta):
         else:
             result = schema.dump(obj)
 
-        if result["data"].get("links", {}).get("self"):
+        if (result["data"] or {}).get("links", {}).get("self"):
             final_result = (result, 201, {"Location": result["data"]["links"]["self"]})
         else:
             final_result = (result, 201)
