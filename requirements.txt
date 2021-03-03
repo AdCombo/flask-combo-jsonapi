@@ -1,6 +1,6 @@
 simplejson
 Flask>=1.0.1
 marshmallow==3.2.1
-marshmallow_jsonapi==0.23.2
+marshmallow_jsonapi==0.24.0
 apispec>=2.0.2
 sqlalchemy
