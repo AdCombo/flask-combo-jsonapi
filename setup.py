@@ -1,7 +1,7 @@
 import os
 from setuptools import setup, find_packages
 
-__version__ = "1.0.0"
+__version__ = "1.0.4"
 
 
 requirements_filepath = os.path.join(os.path.dirname(__name__), "requirements.txt")
@@ -13,7 +13,7 @@ setup(
     version=__version__,
     description="Flask extension to create REST web api according to JSONAPI 1.0 specification"
                 " with Flask, Marshmallow and data provider of your choice (SQLAlchemy, MongoDB, ...)",
-    url="https://github.com/AdCombo/flask-combo-jsonapi/issues/10",
+    url="https://github.com/AdCombo/flask-combo-jsonapi",
     author="AdCombo Team",
     author_email="roman@adcombo.com",
     license="MIT",
