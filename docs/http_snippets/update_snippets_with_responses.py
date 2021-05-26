@@ -26,8 +26,13 @@ def run_request_for_module(module_name: str):
     log.info("Process module %s", module)
     response: requests.Response = module.response
     log.info("Response %s", response)
+
     http_response_text = []
-    response_reason = (response.reason or "").title()
+
+    response_reason = (response.reason or "")
+    if response.status_code != HTTPStatus.OK:
+        response_reason = response_reason.title()
+
     http_response_text.append(
         # "HTTP/1.1 201 Created"
         "{} {} {}".format(
@@ -36,6 +41,7 @@ def run_request_for_module(module_name: str):
             response_reason,
         )
     )
+
     http_response_text.append(
         "{}: {}".format(
             "Content-Type",

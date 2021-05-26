@@ -51,6 +51,7 @@ Flask-COMBO-JSONAPI with Flask.
    :maxdepth: 3
 
    installation
+   minimal_api_example
    quickstart
    logical_data_abstraction
    resource_manager

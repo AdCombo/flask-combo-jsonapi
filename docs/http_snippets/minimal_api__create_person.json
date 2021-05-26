@@ -12,6 +12,6 @@
   ],
   "postData": {
     "mimeType": "application/json",
-    "text": "{\n\t\"data\": {\n\t\t\"type\": \"person\",\n\t\t\"name\": \"John\"\n\t}\n}"
+    "text": "{\n\t\"data\": {\n\t\t\"type\": \"person\",\n\t\t\"attributes\": {\n\t\t\t\t\"name\": \"John\"\n\t\t}\n\t}\n}"
   }
 }
