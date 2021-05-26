@@ -12,6 +12,16 @@ Content-Type: application/vnd.api+json
         "self": "/persons/1"
       },
       "type": "person"
+    },
+    {
+      "attributes": {
+        "name": "Sam"
+      },
+      "id": "2",
+      "links": {
+        "self": "/persons/2"
+      },
+      "type": "person"
     }
   ],
   "jsonapi": {
@@ -24,6 +34,6 @@ Content-Type: application/vnd.api+json
     "self": "http://localhost:5000/persons"
   },
   "meta": {
-    "count": 1
+    "count": 2
   }
 }

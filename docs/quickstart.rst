@@ -5,11 +5,16 @@ Quickstart
 
 .. currentmodule:: flask_combo_jsonapi
 
-It's time to write your first REST API. This guide assumes you have a working understanding of `Flask <http://flask.pocoo.org>`_, and that you have already installed both Flask and Flask-COMBO-JSONAPI. If not, then follow the steps in the :ref:`installation` section.
+It's time to write your first advanced REST API.
+This guide assumes you have a working understanding of `Flask <https://flask.palletsprojects.com/en/1.1.x/>`_,
+and that you have already installed both Flask and Flask-COMBO-JSONAPI.
+If not, then follow the steps in the :ref:`installation` section.
 
-In this section you will learn basic usage of Flask-COMBO-JSONAPI around a small tutorial that use the SQLAlchemy data layer. This tutorial show you an example of a person and his computers.
+In this section you will learn basic usage of Flask-COMBO-JSONAPI
+around a small tutorial that use the SQLAlchemy data layer.
+This tutorial show you an example of a person and his computers.
 
-First example
+Advanced example
 -------------
 
 An example of Flask-COMBO-JSONAPI API looks like this:
