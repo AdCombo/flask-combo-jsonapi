@@ -37,16 +37,19 @@ A minimal API
     # Create the Flask application and the Flask-SQLAlchemy object.
     app = Flask(__name__)
     app.config['DEBUG'] = True
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/test.db'
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/api_minimal.db'
     db = SQLAlchemy(app)
+
 
     # Create model
     class Person(db.Model):
         id = db.Column(db.Integer, primary_key=True)
         name = db.Column(db.String)
 
+
     # Create the database.
     db.create_all()
+
 
     # Create schema
     class PersonSchema(Schema):
@@ -57,18 +60,25 @@ A minimal API
             self_view_many = 'person_list'
 
         id = fields.Integer(as_string=True, dump_only=True)
-        name = fields.Str()
+        name = fields.String()
+
 
     # Create resource managers
     class PersonList(ResourceList):
         schema = PersonSchema
-        data_layer = {'session': db.session,
-                      'model': Person}
+        data_layer = {
+            'session': db.session,
+            'model': Person,
+        }
+
 
     class PersonDetail(ResourceDetail):
         schema = PersonSchema
-        data_layer = {'session': db.session,
-                      'model': Person}
+        data_layer = {
+            'session': db.session,
+            'model': Person,
+        }
+
 
     # Create the API object
     api = Api(app)
@@ -78,6 +88,7 @@ A minimal API
     # Start the flask loop
     if __name__ == '__main__':
         app.run()
+
 
 This example provides the following API structure:
 

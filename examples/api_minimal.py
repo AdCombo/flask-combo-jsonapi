@@ -30,7 +30,7 @@ class PersonSchema(Schema):
         self_view_many = 'person_list'
 
     id = fields.Integer(as_string=True, dump_only=True)
-    name = fields.Str()
+    name = fields.String()
 
 
 # Create resource managers
