@@ -1,7 +1,15 @@
 Flask-COMBO-JSONAPI
 ==================
+.. image:: https://github.com/AdCombo/flask-combo-jsonapi/workflows/Python%20tests%20and%20coverage/badge.svg
+   :alt: flask-combo-jsonapi actions
+   :target: https://github.com/AdCombo/flask-combo-jsonapi/actions
+.. image:: https://coveralls.io/repos/github/AdCombo/flask-combo-jsonapi/badge.svg
+   :alt: flask-combo-jsonapi coverage
+   :target: https://coveralls.io/github/AdCombo/flask-combo-jsonapi
+.. image:: https://img.shields.io/pypi/v/flask-combo-jsonapi.svg
+   :alt: PyPI
+   :target: http://pypi.org/p/flask-combo-jsonapi
 
-.. module:: flask_combo_jsonapi
 
 **Flask-COMBO-JSONAPI** is an extension for Flask that adds support for quickly building REST APIs with huge flexibility around the JSONAPI 1.0 specification. It is designed to fit the complexity of real life environments so Flask-COMBO-JSONAPI helps you to create a logical abstraction of your data called "resource" and can interface any kind of ORMs or data storage through data layer concept.
 

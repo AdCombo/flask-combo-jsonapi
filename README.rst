@@ -1,7 +1,12 @@
 .. image:: https://github.com/AdCombo/flask-combo-jsonapi/workflows/Python%20tests%20and%20coverage/badge.svg
-    :target: https://github.com/AdCombo/flask-combo-jsonapi/actions
+   :alt: flask-combo-jsonapi actions
+   :target: https://github.com/AdCombo/flask-combo-jsonapi/actions
 .. image:: https://coveralls.io/repos/github/AdCombo/flask-combo-jsonapi/badge.svg
-    :target: https://coveralls.io/github/AdCombo/flask-combo-jsonapi
+   :alt: flask-combo-jsonapi coverage
+   :target: https://coveralls.io/github/AdCombo/flask-combo-jsonapi
+.. image:: https://img.shields.io/pypi/v/flask-combo-jsonapi.svg
+   :alt: PyPI
+   :target: http://pypi.org/p/flask-combo-jsonapi
 
 
 Flask-COMBO-JSONAPI
@@ -9,15 +14,13 @@ Flask-COMBO-JSONAPI
 
 Flask-COMBO-JSONAPI is a flask extension for building REST APIs. It combines the power of `Flask-Restless <https://flask-restless.readthedocs.io/>`_ and the flexibility of `Flask-RESTful <https://flask-restful.readthedocs.io/>`_ around a strong specification `JSONAPI 1.0 <http://jsonapi.org/>`_. This framework is designed to quickly build REST APIs and fit the complexity of real life projects with legacy data and multiple data storages.
 
-The main goal is to make it flexible using `plugin system <https://github.com/AdCombo/combojsonapi/blob/develop/docs/en/create_plugins.rst>`_
+The main goal is to make it flexible using `plugin system <https://combojsonapi.readthedocs.io/>`_
 
 
 Install
 =======
 
     pip install Flask-COMBO-JSONAPI
-
-Installation from pypi is not ready yet. Refer to the `installation manual <https://github.com/AdCombo/flask-combo-jsonapi/blob/develop/docs/installation.rst/>`_
 
 
 A minimal API
@@ -107,7 +110,7 @@ Flask-COMBO-JSONAPI vs `Flask-Restless <https://flask-restless.readthedocs.io/en
 Documentation
 =============
 
-Documentation available here: http://Flask-COMBO-JSONAPI.readthedocs.io/en/latest/
+Documentation available here: https://flask-combo-jsonapi.readthedocs.io/
 
 Thanks
 ======
