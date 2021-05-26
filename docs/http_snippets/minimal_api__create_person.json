@@ -1,0 +1,17 @@
+{
+  "method": "POST",
+  "url": "http://localhost:5000/persons",
+  "httpVersion": "HTTP/1.1",
+  "queryString": [
+  ],
+  "headers": [
+    {
+      "name": "content-type",
+      "value": "application/vnd.api+json"
+    }
+  ],
+  "postData": {
+    "mimeType": "application/json",
+    "text": "{\n\t\"data\": {\n\t\t\"type\": \"person\",\n\t\t\"name\": \"John\"\n\t}\n}"
+  }
+}
