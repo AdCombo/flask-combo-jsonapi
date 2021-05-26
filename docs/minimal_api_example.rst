@@ -1,4 +1,4 @@
-.. include::./minimal_api_head.rst
+.. include:: ./minimal_api_head.rst
 
 Request:
 
