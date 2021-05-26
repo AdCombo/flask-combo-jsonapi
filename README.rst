@@ -23,15 +23,76 @@ Install
     pip install Flask-COMBO-JSONAPI
 
 
-Example?
+A minimal API
+=============
 
-.. include:: docs/minimal_api_head.rst
+.. code-block:: python
+
+    from flask import Flask
+    from flask_combo_jsonapi import Api, ResourceDetail, ResourceList
+    from flask_sqlalchemy import SQLAlchemy
+    from marshmallow_jsonapi.flask import Schema
+    from marshmallow_jsonapi import fields
+
+    # Create the Flask application and the Flask-SQLAlchemy object.
+    app = Flask(__name__)
+    app.config['DEBUG'] = True
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/test.db'
+    db = SQLAlchemy(app)
+
+    # Create model
+    class Person(db.Model):
+        id = db.Column(db.Integer, primary_key=True)
+        name = db.Column(db.String)
+
+    # Create the database.
+    db.create_all()
+
+    # Create schema
+    class PersonSchema(Schema):
+        class Meta:
+            type_ = 'person'
+            self_view = 'person_detail'
+            self_view_kwargs = {'id': '<id>'}
+            self_view_many = 'person_list'
+
+        id = fields.Integer(as_string=True, dump_only=True)
+        name = fields.Str()
+
+    # Create resource managers
+    class PersonList(ResourceList):
+        schema = PersonSchema
+        data_layer = {'session': db.session,
+                      'model': Person}
+
+    class PersonDetail(ResourceDetail):
+        schema = PersonSchema
+        data_layer = {'session': db.session,
+                      'model': Person}
+
+    # Create the API object
+    api = Api(app)
+    api.route(PersonList, 'person_list', '/persons')
+    api.route(PersonDetail, 'person_detail', '/persons/<int:id>')
+
+    # Start the flask loop
+    if __name__ == '__main__':
+        app.run()
+
+This example provides the following API structure:
+
+========================  ======  =============  ===========================
+URL                       method  endpoint       Usage
+========================  ======  =============  ===========================
+/persons                  GET     person_list    Get a collection of persons
+/persons                  POST    person_list    Create a person
+/persons/<int:person_id>  GET     person_detail  Get person details
+/persons/<int:person_id>  PATCH   person_detail  Update a person
+/persons/<int:person_id>  DELETE  person_detail  Delete a person
+========================  ======  =============  ===========================
 
 
-Literal include minimal api example?
-
-.. literalinclude:: ./examples/api_minimal.py
-    :language: python
+`More detailed example in the docs <https://flask-combo-jsonapi.readthedocs.io/en/stable/minimal_api_example.html>`_
 
 
 Flask-COMBO-JSONAPI vs `Flask-RESTful <https://flask-restful.readthedocs.io/en/latest/>`_
