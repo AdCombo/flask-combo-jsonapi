@@ -23,8 +23,15 @@ Install
     pip install Flask-COMBO-JSONAPI
 
 
+Example?
 
-.. include:: ./docs/minimal_api_head.rst
+.. include:: docs/minimal_api_head.rst
+
+
+Literal include minimal api example?
+
+.. literalinclude:: ./examples/api_minimal.py
+    :language: python
 
 
 Flask-COMBO-JSONAPI vs `Flask-RESTful <https://flask-restful.readthedocs.io/en/latest/>`_
