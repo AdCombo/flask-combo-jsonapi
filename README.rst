@@ -24,8 +24,7 @@ Install
 
 
 
-.. literalinclude:: ./docs/minimal_api_example.rst
-    :language: rst
+.. include:: ./docs/minimal_api_example.rst
 
 
 Flask-COMBO-JSONAPI vs `Flask-RESTful <https://flask-restful.readthedocs.io/en/latest/>`_

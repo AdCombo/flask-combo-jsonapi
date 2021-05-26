@@ -68,8 +68,7 @@ Flask-COMBO-JSONAPI with Flask.
    configuration
 
 
-.. literalinclude:: ./minimal_api_example.rst
-    :language: rst
+.. include:: ./minimal_api_example.rst
 
 
 API Reference
