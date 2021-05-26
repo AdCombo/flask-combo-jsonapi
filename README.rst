@@ -88,7 +88,7 @@ URL                       method  endpoint       Usage
 /persons/<int:person_id>  DELETE  person_detail  Delete a person
 ========================  ======  =============  ===========================
 
-Flask-COMBO-JSONAPI vs `Flask-RESTful <http://flask-restful-cn.readthedocs.io/en/0.3.5/a>`_
+Flask-COMBO-JSONAPI vs `Flask-RESTful <https://flask-restful.readthedocs.io/en/latest/>`_
 ==========================================================================================
 
 * In contrast to Flask-RESTful, Flask-COMBO-JSONAPI provides a default implementation of get, post, patch and delete methods around a strong specification JSONAPI 1.0. Thanks to this you can build REST API very quickly.
