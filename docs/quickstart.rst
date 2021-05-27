@@ -76,12 +76,12 @@ This example provides this api:
 
 .. warning::
 
-    In this example, I use Flask-SQLAlchemy so you have to install it before to run the example.
+    In this example Flask-SQLAlchemy is used, so you'll need to install it before running this example.
 
     $ pip install flask_sqlalchemy
 
-Save this as api.py and run it using your Python interpreter. Note that we've enabled
-`Flask debugging <http://flask.pocoo.org/docs/quickstart/#debug-mode>`_ mode to provide code reloading and better error
+Save `this file <https://github.com/AdCombo/flask-combo-jsonapi/blob/master/examples/api.py>`_ as api.py and run it using your Python interpreter. Note that we've enabled
+`Flask debugging <https://flask.palletsprojects.com/en/2.0.x/quickstart/#debug-mode>`_ mode to provide code reloading and better error
 messages. ::
 
     $ python api.py
