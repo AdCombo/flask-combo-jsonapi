@@ -35,38 +35,6 @@ class Computer(db.Model):
     person = db.relationship('Person', backref=db.backref('computers'))
 
 
-class PersonTag(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    person_id = db.Column(db.Integer, db.ForeignKey('person.id'), index=True)
-    key = db.Column(db.String)
-    value = db.Column(db.String)
-
-    __table_args__ = (
-        UniqueConstraint(
-            'person_id',
-            'key',
-            'value',
-            name='_person_key_value'
-        ),
-    )
-
-
-class PersonSingleTag(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    person_id = db.Column(db.Integer, db.ForeignKey('person.id'), index=True)
-    key = db.Column(db.String)
-    value = db.Column(db.String)
-
-    __table_args__ = (
-        UniqueConstraint(
-            'person_id',
-            'key',
-            'value',
-            name='_person_key_value'
-        ),
-    )
-
-
 db.create_all()
 
 
