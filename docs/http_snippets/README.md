@@ -13,13 +13,29 @@ npm install --global httpsnippet
 npm install --save httpsnippet
 ```
 
+## Spec
+
+Create HAR specs (.json files) in this directory.
+
+> **Don't edit any files in the `./snippets` directory manually!**
+
 ## Generate
 
 ### Create all snippets and run requests for them
 
 ```shell
-# run and create for all
-./run_and_create.sh
+# run and create for all minimal api requests
+./run_and_create.sh minimal_api
+```
+
+```shell
+# run and create for all nested api requests
+./run_and_create.sh nested_api
+```
+
+```shell
+# run and create for delete example nested api requests
+./run_and_create.sh nested_api__delete
 ```
 
 ### Or do it manually:
@@ -54,8 +70,20 @@ httpsnippet ./*.json --target python --client requests --output ./snippets
 ```
 
 ```shell
-# Run requests, save output
-python3 update_snippets_with_responses.py
+# Run requests for minimal api, save output
+python3 update_snippets_with_responses.py minimal_api
+```
+
+```shell
+# Run requests for nested api, save output
+python3 update_snippets_with_responses.py nested_api
+```
+
+#### Verbose logs (DEBUG level)
+
+```shell
+# Run requests for nested api, save output
+python3 update_snippets_with_responses.py nested_api --verbose
 ```
 
 > **Pro tip:** run webserver for specs before running update_snippets_with_responses, otherwise it won't work 😉 

@@ -7,7 +7,7 @@ from flask_combo_jsonapi.exceptions import ObjectNotFound
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm.exc import NoResultFound
 from marshmallow_jsonapi.flask import Schema, Relationship
-from marshmallow import Schema as MarshmallowSchema
+from marshmallow import Schema as MarshmallowSchema, pre_load
 from marshmallow_jsonapi import fields
 
 # Create the Flask application
@@ -121,6 +121,19 @@ class PersonSchema(Schema):
         type_='computer',
     )
 
+    @pre_load
+    def remove_id_before_deserializing(self, data, **kwargs):
+        """
+        We don't want to allow editing ID on POST / PATCH
+
+        Related issues:
+        https://github.com/AdCombo/flask-combo-jsonapi/issues/34
+        https://github.com/miLibris/flask-rest-jsonapi/issues/193
+        """
+        if 'id' in data:
+            del data['id']
+        return data
+
 
 class ComputerSchema(Schema):
     class Meta:
@@ -139,6 +152,19 @@ class ComputerSchema(Schema):
         schema='PersonSchema',
         type_='person',
     )
+
+    @pre_load
+    def remove_id_before_deserializing(self, data, **kwargs):
+        """
+        We don't want to allow editing ID on POST / PATCH
+
+        Related issues:
+        https://github.com/AdCombo/flask-combo-jsonapi/issues/34
+        https://github.com/miLibris/flask-rest-jsonapi/issues/193
+        """
+        if 'id' in data:
+            del data['id']
+        return data
 
 
 # Create resource managers

@@ -100,287 +100,81 @@ Create object
 
 Request:
 
-.. sourcecode:: http
-
-    POST /computers HTTP/1.1
-    Content-Type: application/vnd.api+json
-    Accept: application/vnd.api+json
-
-    {
-      "data": {
-        "type": "computer",
-        "attributes": {
-          "serial": "Amstrad"
-        }
-      }
-    }
+.. literalinclude:: ./http_snippets/snippets/nested_api__create_computer
+  :language: HTTP
 
 Response:
 
-.. sourcecode:: http
+.. literalinclude:: ./http_snippets/snippets/nested_api__create_computer_result
+  :language: HTTP
 
-    HTTP/1.1 201 Created
-    Content-Type: application/vnd.api+json
-
-    {
-      "data": {
-        "type": "computer",
-        "id": "1",
-        "attributes": {
-          "serial": "Amstrad"
-        },
-        "relationships": {
-          "owner": {
-            "links": {
-              "related": "/computers/1/owner",
-              "self": "/computers/1/relationships/owner"
-            }
-          }
-        },
-        "links": {
-          "self": "/computers/1"
-        }
-      },
-      "links": {
-        "self": "/computers/1"
-      },
-      "jsonapi": {
-        "version": "1.0"
-      }
-    }
 
 List objects
 ~~~~~~~~~~~~
 
 Request:
 
-.. sourcecode:: http
-
-    GET /computers HTTP/1.1
-    Accept: application/vnd.api+json
+.. literalinclude:: ./http_snippets/snippets/nested_api__get_computers
+  :language: HTTP
 
 Response:
 
-.. sourcecode:: http
+.. literalinclude:: ./http_snippets/snippets/nested_api__get_computers_result
+  :language: HTTP
 
-    HTTP/1.1 200 OK
-    Content-Type: application/vnd.api+json
-
-    {
-      "data": [
-        {
-          "type": "computer",
-          "id": "1",
-          "attributes": {
-            "serial": "Amstrad"
-          },
-          "relationships": {
-            "owner": {
-              "links": {
-                "related": "/computers/1/owner",
-                "self": "/computers/1/relationships/owner"
-              }
-            }
-          },
-          "links": {
-            "self": "/computers/1"
-          }
-        }
-      ],
-      "meta": {
-        "count": 1
-      },
-      "links": {
-        "self": "/computers"
-      },
-      "jsonapi": {
-        "version": "1.0"
-      },
-    }
 
 Update object
 ~~~~~~~~~~~~~
 
 Request:
 
-.. sourcecode:: http
-
-    PATCH /computers/1 HTTP/1.1
-    Content-Type: application/vnd.api+json
-    Accept: application/vnd.api+json
-
-    {
-      "data": {
-        "type": "computer",
-        "id": "1",
-        "attributes": {
-          "serial": "Amstrad 2"
-        }
-      }
-    }
+.. literalinclude:: ./http_snippets/snippets/nested_api__patch_computer
+  :language: HTTP
 
 Response:
 
-.. sourcecode:: http
+.. literalinclude:: ./http_snippets/snippets/nested_api__patch_computer_result
+  :language: HTTP
 
-    HTTP/1.1 200 OK
-    Content-Type: application/vnd.api+json
-
-    {
-      "data": {
-        "type": "computer",
-        "id": "1",
-        "attributes": {
-          "serial": "Amstrad 2"
-        },
-        "relationships": {
-          "owner": {
-            "links": {
-              "related": "/computers/1/owner",
-              "self": "/computers/1/relationships/owner"
-            }
-          }
-        },
-        "links": {
-          "self": "/computers/1"
-        }
-      },
-      "links": {
-        "self": "/computers/1"
-      },
-      "jsonapi": {
-        "version": "1.0"
-      }
-    }
 
 Delete object
 ~~~~~~~~~~~~~
 
 Request:
 
-.. sourcecode:: http
-
-    DELETE /computers/1 HTTP/1.1
-    Accept: application/vnd.api+json
+.. literalinclude:: ./http_snippets/snippets/nested_api__delete_computer
+  :language: HTTP
 
 Response:
 
-.. sourcecode:: http
+.. literalinclude:: ./http_snippets/snippets/nested_api__delete_computer_result
+  :language: HTTP
 
-    HTTP/1.1 200 OK
-    Content-Type: application/vnd.api+json
-
-    {
-      "meta": {
-        "message": "Object successfully deleted"
-      },
-      "jsonapi": {
-        "version": "1.0"
-      }
-    }
 
 Relationships
 -------------
 
-| Now let's use relationships tools. First, create 3 computers named Halo, Nestor and Comodor like in previous example.
+| Now let's use relationships tools.
+| First, create 3 computers named "Halo", "Nestor" and "Comodor".
 |
 | Done ?
 | Ok. So let's continue this tutorial.
 |
-| We assume that Halo has id: 2, Nestor id: 3 and Comodor has id: 4.
+| We assume that Halo has id=2, Nestor id=3 and Comodor id=4.
 
 Create object with related object(s)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Request:
 
-.. sourcecode:: http
-
-    POST /persons?include=computers HTTP/1.1
-    Content-Type: application/vnd.api+json
-    Accept: application/vnd.api+json
-
-    {
-      "data": {
-        "type": "person",
-        "attributes": {
-          "name": "John",
-          "email": "john@gmail.com",
-          "birth_date": "1990-12-18"
-        },
-        "relationships": {
-          "computers": {
-            "data": [
-              {
-                "type": "computer",
-                "id": "1"
-              }
-            ]
-          }
-        }
-      }
-    }
+.. literalinclude:: ./http_snippets/snippets/nested_api__create_person_with_computer_relationship
+  :language: HTTP
 
 Response:
 
-.. sourcecode:: http
+.. literalinclude:: ./http_snippets/snippets/nested_api__create_person_with_computer_relationship_result
+  :language: HTTP
 
-    HTTP/1.1 201 Created
-    Content-Type: application/vnd.api+json
-
-    {
-      "data": {
-        "type": "person",
-        "id": "1",
-        "attributes": {
-          "display_name": "JOHN <john@gmail.com>",
-          "birth_date": "1990-12-18"
-        },
-        "links": {
-          "self": "/persons/1"
-        },
-        "relationships": {
-          "computers": {
-            "data": [
-              {
-                "id": "1",
-                "type": "computer"
-              }
-            ],
-            "links": {
-              "related": "/persons/1/computers",
-              "self": "/persons/1/relationships/computers"
-            }
-          }
-        },
-      },
-      "included": [
-        {
-          "type": "computer",
-          "id": "1",
-          "attributes": {
-            "serial": "Amstrad"
-          },
-          "links": {
-            "self": "/computers/1"
-          },
-          "relationships": {
-            "owner": {
-              "links": {
-                "related": "/computers/1/owner",
-                "self": "/computers/1/relationships/owner"
-              }
-            }
-          }
-        }
-      ],
-      "jsonapi": {
-        "version": "1.0"
-      },
-      "links": {
-        "self": "/persons/1"
-      }
-    }
 
 You can see that I have added the querystring parameter "include" to the url
 
@@ -393,284 +187,51 @@ Thanks to this parameter, related computers details are included to the result. 
 Update object and his relationships
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Now John sell his Amstrad and buy a new computer named Nestor (id: 3). So we want to link this new computer to John. John have also made a mistake in his birth_date so let's update this 2 things in the same time.
+Now John sell his Halo (id=2) and buys a new computer named Nestor (id=3).
+So we want to link this new computer to John.
+John have also made a mistake in his email so let's update these 2 things in the same time.
 
 Request:
 
-.. sourcecode:: http
-
-    PATCH /persons/1?include=computers HTTP/1.1
-    Content-Type: application/vnd.api+json
-    Accept: application/vnd.api+json
-
-    {
-      "data": {
-        "type": "person",
-        "id": "1",
-        "attributes": {
-          "birth_date": "1990-10-18"
-        },
-        "relationships": {
-          "computers": {
-            "data": [
-              {
-                "type": "computer",
-                "id": "3"
-              }
-            ]
-          }
-        }
-      }
-    }
+.. literalinclude:: ./http_snippets/snippets/nested_api__update_person_with_computer_relationship
+  :language: HTTP
 
 Response:
 
-.. sourcecode:: http
+.. literalinclude:: ./http_snippets/snippets/nested_api__update_person_with_computer_relationship_result
+  :language: HTTP
 
-    HTTP/1.1 200 OK
-    Content-Type: application/vnd.api+json
-
-    {
-      "data": {
-        "type": "person",
-        "id": "1",
-        "attributes": {
-          "display_name": "JOHN <john@gmail.com>",
-          "birth_date": "1990-10-18",
-        },
-        "links": {
-          "self": "/persons/1"
-        },
-        "relationships": {
-          "computers": {
-            "data": [
-              {
-                "id": "3",
-                "type": "computer"
-              }
-            ],
-            "links": {
-              "related": "/persons/1/computers",
-              "self": "/persons/1/relationships/computers"
-            }
-          }
-        },
-      },
-      "included": [
-        {
-          "type": "computer",
-          "id": "3",
-          "attributes": {
-            "serial": "Nestor"
-          },
-          "relationships": {
-            "owner": {
-              "links": {
-                "related": "/computers/3/owner",
-                "self": "/computers/3/relationships/owner"
-              }
-            }
-          },
-          "links": {
-            "self": "/computers/3"
-          }
-        }
-      ],
-      "links": {
-        "self": "/persons/1"
-      },
-      "jsonapi": {
-        "version": "1.0"
-      }
-    }
 
 Create relationship
 ~~~~~~~~~~~~~~~~~~~
 
-Now John buy a new computer named Comodor so let's link it to John.
+Now John buys a new computer named Comodor (id=4) so let's link it to John.
 
 Request:
 
-.. sourcecode:: http
-
-    POST /persons/1/relationships/computers HTTP/1.1
-    Content-Type: application/vnd.api+json
-    Accept: application/vnd.api+json
-
-    {
-      "data": [
-        {
-          "type": "computer",
-          "id": "4"
-        }
-      ]
-    }
+.. literalinclude:: ./http_snippets/snippets/nested_api__create_computer_relationship_for_person
+  :language: HTTP
 
 Response:
 
-.. sourcecode:: http
-
-    HTTP/1.1 200 OK
-    Content-Type: application/vnd.api+json
-
-    {
-      "data": {
-        "type": "person",
-        "id": "1",
-        "attributes": {
-          "display_name": "JOHN <john@gmail.com>",
-          "birth_date": "1990-10-18"
-        },
-        "relationships": {
-          "computers": {
-            "data": [
-              {
-                "id": "3",
-                "type": "computer"
-              },
-              {
-                "id": "4",
-                "type": "computer"
-              }
-            ],
-            "links": {
-              "related": "/persons/1/computers",
-              "self": "/persons/1/relationships/computers"
-            }
-          }
-        },
-        "links": {
-          "self": "/persons/1"
-        }
-      },
-      "included": [
-        {
-          "type": "computer",
-          "id": "3",
-          "attributes": {
-            "serial": "Nestor"
-          },
-          "relationships": {
-            "owner": {
-              "links": {
-                "related": "/computers/3/owner",
-                "self": "/computers/3/relationships/owner"
-              }
-            }
-          },
-          "links": {
-            "self": "/computers/3"
-          }
-        },
-        {
-          "type": "computer",
-          "id": "4",
-          "attributes": {
-            "serial": "Comodor"
-          },
-          "relationships": {
-            "owner": {
-              "links": {
-                "related": "/computers/4/owner",
-                "self": "/computers/4/relationships/owner"
-              }
-            }
-          },
-          "links": {
-            "self": "/computers/4"
-          }
-        }
-      ],
-      "links": {
-        "self": "/persons/1/relationships/computers"
-      },
-      "jsonapi": {
-        "version": "1.0"
-      }
-    }
+.. literalinclude:: ./http_snippets/snippets/nested_api__create_computer_relationship_for_person_result
+  :language: HTTP
 
 
 Delete relationship
 ~~~~~~~~~~~~~~~~~~~
 
-Now John sell his old Nestor computer so let's unlink it from John.
+Now John sells his old Nestor computer so let's unlink it from John.
 
 Request:
 
-.. sourcecode:: http
-
-    DELETE /persons/1/relationships/computers HTTP/1.1
-    Content-Type: application/vnd.api+json
-    Accept: application/vnd.api+json
-
-    {
-      "data": [
-        {
-          "type": "computer",
-          "id": "3"
-        }
-      ]
-    }
+.. literalinclude:: ./http_snippets/snippets/nested_api__delete_computer_relationship
+  :language: HTTP
 
 Response:
 
-.. sourcecode:: http
+.. literalinclude:: ./http_snippets/snippets/nested_api__delete_computer_relationship_result
+  :language: HTTP
 
-    HTTP/1.1 200 OK
-    Content-Type: application/vnd.api+json
-
-    {
-      "data": {
-        "type": "person",
-        "id": "1",
-        "attributes": {
-          "display_name": "JOHN <john@gmail.com>",
-          "birth_date": "1990-10-18"
-        },
-        "relationships": {
-          "computers": {
-            "data": [
-              {
-                "id": "4",
-                "type": "computer"
-              }
-            ],
-            "links": {
-              "related": "/persons/1/computers",
-              "self": "/persons/1/relationships/computers"
-            }
-          }
-        },
-        "links": {
-          "self": "/persons/1"
-        }
-      },
-      "included": [
-        {
-          "type": "computer",
-          "id": "4",
-          "attributes": {
-            "serial": "Comodor"
-          },
-          "relationships": {
-            "owner": {
-              "links": {
-                "related": "/computers/4/owner",
-                "self": "/computers/4/relationships/owner"
-              }
-            }
-          },
-          "links": {
-            "self": "/computers/4"
-          }
-        }
-      ],
-      "links": {
-          "self": "/persons/1/relationships/computers"
-      },
-      "jsonapi": {
-          "version": "1.0"
-      }
-    }
 
 If you want to see more examples go to `JSON API 1.0 specification <http://jsonapi.org/>`_

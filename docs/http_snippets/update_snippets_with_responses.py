@@ -5,8 +5,11 @@ from http import HTTPStatus
 
 import requests
 import simplejson
+import argparse
 
-logging.basicConfig(level=logging.DEBUG)
+parser = argparse.ArgumentParser()
+parser.add_argument("prefix", help="Snippets prefix to process. Like 'minimal_api', 'nested_', etc")
+parser.add_argument("-v", "--verbose", help="set logging level to DEBUG", action="store_true")
 
 log = logging.getLogger(__name__)
 
@@ -20,6 +23,7 @@ SORTING_ORDER = [
     "create",
     "get",
     "patch",
+    "update",  # like patch
     "delete",
 ]
 
@@ -140,10 +144,17 @@ def add_help_lines(lines: list, module_name: str) -> None:
 
 
 def main():
+    args = parser.parse_args()
+    if args.verbose:
+        logging.basicConfig(level=logging.DEBUG)
+
     log.warning("Starting")
 
-    modules_to_process = os.listdir(SNIPPETS_DIR)
-    log.debug("all available snippets: %s", modules_to_process)
+    available_modules = os.listdir(SNIPPETS_DIR)
+    log.debug("all available snippets: %s", available_modules)
+    modules_to_process = list(
+        filter(lambda name: name.startswith(args.prefix), available_modules)
+    )
     modules_to_process.sort(key=StrOrderCRUD)
     log.warning("modules to process (with order): %s", modules_to_process)
 

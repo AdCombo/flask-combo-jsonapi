@@ -1,10 +1,12 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
-echo "Create HTTP snippets"
-httpsnippet ./*.json  --target http --output ./snippets
+echo "Create HTTP and Python snippets"
 
-echo "Create Python (requests) snippets"
-httpsnippet ./*.json --target python --client requests --output ./snippets
+for filename in ./"$1"*.json; do
+  echo "process $filename"
+  httpsnippet "$filename" --target http --output ./snippets
+  httpsnippet "$filename" --target python --client requests --output ./snippets
+done
 
 echo "Run requests"
-python3 update_snippets_with_responses.py
+python3 update_snippets_with_responses.py "$1"
