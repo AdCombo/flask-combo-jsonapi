@@ -419,7 +419,11 @@ class ResourceRelationship(Resource, metaclass=ResourceMeta):
 
     @check_method_requirements
     def post(self, *args, **kwargs):
-        """Add / create relationship(s)"""
+        """
+        Add / create relationship(s)
+
+        https://jsonapi.org/format/#crud-updating-to-many-relationships
+        """
         relationship_field, model_relationship_field, related_type_, related_id_field = self._get_relationship_data()
         json_data = self._get_validated_json_payload(related_type_)
         self.before_post(args, kwargs, json_data=json_data)
@@ -441,7 +445,23 @@ class ResourceRelationship(Resource, metaclass=ResourceMeta):
 
     @check_method_requirements
     def patch(self, *args, **kwargs):
-        """Update a relationship"""
+        """
+        Update a relationship
+
+        # https://jsonapi.org/format/#crud-updating-relationship-responses-200
+
+        > If a server accepts an update but also changes the targeted relationship(s)
+        > in other ways than those specified by the request,
+        > it MUST return a 200 OK response.
+        > The response document MUST include a representation
+        > of the updated relationship(s).
+
+        > A server MUST return a 200 OK status code if an update is successful,
+        > the client’s current data remain up to date,
+        > and the server responds only with top-level meta data.
+        > In this case the server MUST NOT include a representation
+        > of the updated relationship(s).
+        """
         relationship_field, model_relationship_field, related_type_, related_id_field = self._get_relationship_data()
 
         json_data = self._get_validated_json_payload(related_type_)

@@ -234,4 +234,4 @@ Response:
   :language: HTTP
 
 
-If you want to see more examples go to `JSON API 1.0 specification <http://jsonapi.org/>`_
+If you want to see more examples visit `JSON API 1.0 specification <http://jsonapi.org/>`_
