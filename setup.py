@@ -1,7 +1,7 @@
 import os
 from setuptools import setup, find_packages
 
-__version__ = "1.0.6"
+__version__ = "1.0.7"
 
 
 requirements_filepath = os.path.join(os.path.dirname(__name__), "requirements.txt")
