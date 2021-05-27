@@ -5,10 +5,7 @@ Content-Type: application/vnd.api+json
   "data": {
     "attributes": {
       "display_name": "JOHN <john@exmple.com>",
-      "json_data": null,
-      "name": "John",
-      "single_tag": null,
-      "tags": []
+      "name": "John"
     },
     "id": "1",
     "links": {
