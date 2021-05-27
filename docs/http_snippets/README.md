@@ -3,6 +3,11 @@
 
 ## Install
 
+> Waiting for a PR to be merged: https://github.com/Kong/httpsnippet/pull/222
+>
+> Otherwise, extra options cannot be passed 
+> (you'll need to delete Host and Content-Length manually, or use the forked version) 
+
 ```shell
 # to use in cli
 npm install --global httpsnippet
@@ -53,6 +58,12 @@ httpsnippet minimal_api__create_person.json --target python --client python3 --o
 ```shell
 # minimal api to http
 httpsnippet minimal_api__create_person.json --target http --output ./snippets
+```
+
+
+```shell
+# minimal api to http. don't write Host, Content-Length
+httpsnippet minimal_api__create_person.json --target http --output ./snippets -x '{"autoHost": false, "autoContentLength": false}'
 ```
 
 
