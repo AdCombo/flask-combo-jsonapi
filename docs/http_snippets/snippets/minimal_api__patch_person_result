@@ -4,7 +4,7 @@ Content-Type: application/vnd.api+json
 {
   "data": {
     "attributes": {
-      "name": "John"
+      "name": "Sam"
     },
     "id": "1",
     "links": {

@@ -60,3 +60,5 @@ python3 update_snippets_with_responses.py
 
 > **Pro tip:** run webserver for specs before running update_snippets_with_responses, otherwise it won't work 😉 
 
+
+Copy-paste resulting help text (from between the "===" lines) to make includes.

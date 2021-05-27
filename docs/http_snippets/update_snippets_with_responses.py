@@ -16,6 +16,38 @@ SNIPPET_RESULT_POSTFIX = "_result"
 REMOVE_PYTHON_SNIPPET = True
 
 
+SORTING_ORDER = [
+    "create",
+    "get",
+    "patch",
+    "delete",
+]
+
+ORDER_POS = {
+    i: v for i, v in enumerate(SORTING_ORDER)
+}
+
+
+class StrOrderCRUD:
+    def __init__(self, inner):
+        self.inner = inner
+
+    def __lt__(self, other):
+        index_1 = -1
+        index_2 = -1
+        for index, name in ORDER_POS.items():
+            substring = f"__{name}_"
+            if substring in self.inner:
+                index_1 = index
+            if substring in other.inner:
+                index_2 = index
+
+        if index_1 != index_2:
+            return index_1 < index_2
+
+        return self.inner < other.inner
+
+
 def run_request_for_module(module_name: str):
     log.info("Start processing %r", module_name)
 
@@ -71,18 +103,69 @@ def run_request_for_module(module_name: str):
     log.info("Processed %r", module_name)
 
 
+def add_help_lines(lines: list, module_name: str) -> None:
+    """
+
+    Append help lines to create smth like this:
+
+    '''
+
+    Request:
+
+    .. literalinclude:: ./http_snippets/snippets/minimal_api__create_person
+      :language: HTTP
+
+    Response:
+
+    .. literalinclude:: ./http_snippets/snippets/minimal_api__create_person_result
+      :language: HTTP
+
+    '''
+
+    """
+    literalinclude_file =  ".. literalinclude:: ./http_snippets/snippets/" + module_name
+    rst_language_http    = "  :language: HTTP"
+
+    lines.append("")
+    lines.append("Request:")
+    lines.append("")
+    lines.append(literalinclude_file)
+    lines.append(rst_language_http)
+    lines.append("")
+    lines.append("Response:")
+    lines.append("")
+    lines.append(literalinclude_file + SNIPPET_RESULT_POSTFIX)
+    lines.append(rst_language_http)
+    lines.append("")
+
+
 def main():
     log.warning("Starting")
 
-    for module_name in os.listdir(SNIPPETS_DIR):
-        if module_name.endswith(".py"):
+    modules_to_process = os.listdir(SNIPPETS_DIR)
+    log.debug("all available snippets: %s", modules_to_process)
+    modules_to_process.sort(key=StrOrderCRUD)
+    log.warning("modules to process (with order): %s", modules_to_process)
+
+    result_help_text = []
+    result_help_text.append("=" * 30)
+
+    for module_file in modules_to_process:
+        if module_file.endswith(".py"):
+            module_name = module_file[:-3]
             try:
-                run_request_for_module(module_name[:-3])
+                run_request_for_module(module_name)
             except Exception:
-                log.exception("Could not process module %r, skipping", module_name)
+                log.exception("Could not process module %r, skipping", module_file)
             else:
                 if REMOVE_PYTHON_SNIPPET:
-                    os.unlink("/".join((SNIPPETS_DIR, module_name)))
+                    os.unlink("/".join((SNIPPETS_DIR, module_file)))
+                add_help_lines(result_help_text, module_name)
+
+    result_help_text.append("=" * 30)
+    result_help_text.append("")
+
+    print("\n".join(result_help_text))
 
     log.warning("Done")
 
