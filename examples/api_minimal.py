@@ -1,8 +1,7 @@
 from flask import Flask
-from marshmallow import pre_load
-
 from flask_combo_jsonapi import Api, ResourceDetail, ResourceList
 from flask_sqlalchemy import SQLAlchemy
+from marshmallow import pre_load
 from marshmallow_jsonapi.flask import Schema
 from marshmallow_jsonapi import fields
 
