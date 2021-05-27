@@ -29,13 +29,13 @@ Create HAR specs (.json files) in this directory.
 ```
 
 ```shell
-# run and create for all nested api requests
-./run_and_create.sh nested_api
+# run and create for all relationship api requests
+./run_and_create.sh relationship_api
 ```
 
 ```shell
-# run and create for delete example nested api requests
-./run_and_create.sh nested_api__delete
+# run and create for delete example relationship api requests
+./run_and_create.sh relationship_api__delete
 ```
 
 ### Or do it manually:
@@ -75,15 +75,15 @@ python3 update_snippets_with_responses.py minimal_api
 ```
 
 ```shell
-# Run requests for nested api, save output
-python3 update_snippets_with_responses.py nested_api
+# Run requests for relationship api, save output
+python3 update_snippets_with_responses.py relationship_api
 ```
 
 #### Verbose logs (DEBUG level)
 
 ```shell
-# Run requests for nested api, save output
-python3 update_snippets_with_responses.py nested_api --verbose
+# Run requests for relationship api, save output
+python3 update_snippets_with_responses.py relationship_api --verbose
 ```
 
 > **Pro tip:** run webserver for specs before running update_snippets_with_responses, otherwise it won't work 😉 

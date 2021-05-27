@@ -8,7 +8,7 @@ import simplejson
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument("prefix", help="Snippets prefix to process. Like 'minimal_api', 'nested_', etc")
+parser.add_argument("prefix", help="Snippets prefix to process. Like 'minimal_api', 'relationship_', etc")
 parser.add_argument("-v", "--verbose", help="set logging level to DEBUG", action="store_true")
 
 log = logging.getLogger(__name__)

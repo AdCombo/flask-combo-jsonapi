@@ -100,12 +100,12 @@ Create object
 
 Request:
 
-.. literalinclude:: ./http_snippets/snippets/nested_api__create_computer
+.. literalinclude:: ./http_snippets/snippets/relationship_api__create_computer
   :language: HTTP
 
 Response:
 
-.. literalinclude:: ./http_snippets/snippets/nested_api__create_computer_result
+.. literalinclude:: ./http_snippets/snippets/relationship_api__create_computer_result
   :language: HTTP
 
 
@@ -114,12 +114,12 @@ List objects
 
 Request:
 
-.. literalinclude:: ./http_snippets/snippets/nested_api__get_computers
+.. literalinclude:: ./http_snippets/snippets/relationship_api__get_computers
   :language: HTTP
 
 Response:
 
-.. literalinclude:: ./http_snippets/snippets/nested_api__get_computers_result
+.. literalinclude:: ./http_snippets/snippets/relationship_api__get_computers_result
   :language: HTTP
 
 
@@ -128,12 +128,12 @@ Update object
 
 Request:
 
-.. literalinclude:: ./http_snippets/snippets/nested_api__patch_computer
+.. literalinclude:: ./http_snippets/snippets/relationship_api__patch_computer
   :language: HTTP
 
 Response:
 
-.. literalinclude:: ./http_snippets/snippets/nested_api__patch_computer_result
+.. literalinclude:: ./http_snippets/snippets/relationship_api__patch_computer_result
   :language: HTTP
 
 
@@ -142,12 +142,12 @@ Delete object
 
 Request:
 
-.. literalinclude:: ./http_snippets/snippets/nested_api__delete_computer
+.. literalinclude:: ./http_snippets/snippets/relationship_api__delete_computer
   :language: HTTP
 
 Response:
 
-.. literalinclude:: ./http_snippets/snippets/nested_api__delete_computer_result
+.. literalinclude:: ./http_snippets/snippets/relationship_api__delete_computer_result
   :language: HTTP
 
 
@@ -167,12 +167,12 @@ Create object with related object(s)
 
 Request:
 
-.. literalinclude:: ./http_snippets/snippets/nested_api__create_person_with_computer_relationship
+.. literalinclude:: ./http_snippets/snippets/relationship_api__create_person_with_computer_relationship
   :language: HTTP
 
 Response:
 
-.. literalinclude:: ./http_snippets/snippets/nested_api__create_person_with_computer_relationship_result
+.. literalinclude:: ./http_snippets/snippets/relationship_api__create_person_with_computer_relationship_result
   :language: HTTP
 
 
@@ -193,12 +193,12 @@ John have also made a mistake in his email so let's update these 2 things in the
 
 Request:
 
-.. literalinclude:: ./http_snippets/snippets/nested_api__update_person_with_computer_relationship
+.. literalinclude:: ./http_snippets/snippets/relationship_api__update_person_with_computer_relationship
   :language: HTTP
 
 Response:
 
-.. literalinclude:: ./http_snippets/snippets/nested_api__update_person_with_computer_relationship_result
+.. literalinclude:: ./http_snippets/snippets/relationship_api__update_person_with_computer_relationship_result
   :language: HTTP
 
 
@@ -209,12 +209,40 @@ Now John buys a new computer named Comodor (id=4) so let's link it to John.
 
 Request:
 
-.. literalinclude:: ./http_snippets/snippets/nested_api__create_computer_relationship_for_person
+.. literalinclude:: ./http_snippets/snippets/relationship_api__create_computer_relationship_for_person
   :language: HTTP
 
 Response:
 
-.. literalinclude:: ./http_snippets/snippets/nested_api__create_computer_relationship_for_person_result
+.. literalinclude:: ./http_snippets/snippets/relationship_api__create_computer_relationship_for_person_result
+  :language: HTTP
+
+
+Load person with all the related computers
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Request:
+
+.. literalinclude:: ./http_snippets/snippets/relationship_api__get_person_with_computers
+  :language: HTTP
+
+Response:
+
+.. literalinclude:: ./http_snippets/snippets/relationship_api__get_person_with_computers_result
+  :language: HTTP
+
+
+Check person's computers without loading actual person
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Request:
+
+.. literalinclude:: ./http_snippets/snippets/relationship_api__get_person_related_computers
+  :language: HTTP
+
+Response:
+
+.. literalinclude:: ./http_snippets/snippets/relationship_api__get_person_related_computers_result
   :language: HTTP
 
 
@@ -225,12 +253,12 @@ Now John sells his old Nestor computer so let's unlink it from John.
 
 Request:
 
-.. literalinclude:: ./http_snippets/snippets/nested_api__delete_computer_relationship
+.. literalinclude:: ./http_snippets/snippets/relationship_api__delete_computer_relationship
   :language: HTTP
 
 Response:
 
-.. literalinclude:: ./http_snippets/snippets/nested_api__delete_computer_relationship_result
+.. literalinclude:: ./http_snippets/snippets/relationship_api__delete_computer_relationship_result
   :language: HTTP
 
 
