@@ -11,8 +11,8 @@ and that you have already installed both Flask and Flask-COMBO-JSONAPI.
 If not, then follow the steps in the :ref:`installation` section.
 
 In this section you will learn basic usage of Flask-COMBO-JSONAPI
-around a small tutorial that use the SQLAlchemy data layer.
-This tutorial show you an example of a person and his computers.
+around a small tutorial that uses the SQLAlchemy data layer.
+This tutorial shows you an example of a person and their computers.
 
 Advanced example
 -------------
@@ -22,7 +22,7 @@ An example of Flask-COMBO-JSONAPI API looks like this:
 .. literalinclude:: ../examples/api.py
     :language: python
 
-This example provides this api:
+This example provides the following API:
 
 +-------------------------------------------+--------+------------------+-------------------------------------------------------+
 | url                                       | method | endpoint         | action                                                |
@@ -157,7 +157,7 @@ Relationships
 | Now let's use relationships tools.
 | First, create 3 computers named "Halo", "Nestor" and "Comodor".
 |
-| Done ?
+| Done?
 | Ok. So let's continue this tutorial.
 |
 | We assume that Halo has id=2, Nestor id=3 and Comodor id=4.
@@ -176,13 +176,13 @@ Response:
   :language: HTTP
 
 
-You can see that I have added the querystring parameter "include" to the url
+You can see that we have added the query string parameter "include" to the URL
 
 .. sourcecode:: http
 
     POST /persons?include=computers HTTP/1.1
 
-Thanks to this parameter, related computers details are included to the result. If you want to learn more: :ref:`include_related_objects`
+Thanks to this parameter, the related computers' details are included in the result. If you want to learn more: :ref:`include_related_objects`
 
 Update object and his relationships
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -249,7 +249,7 @@ Response:
 Delete relationship
 ~~~~~~~~~~~~~~~~~~~
 
-Now John sells his old Nestor computer so let's unlink it from John.
+Now John sells his old Nestor computer, so let's unlink it from John.
 
 Request:
 
