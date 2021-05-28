@@ -52,7 +52,7 @@ Content-Type: application/vnd.api+json
     },
     {
       "attributes": {
-        "serial": "Comodor"
+        "serial": "Commodore"
       },
       "id": "4",
       "links": {
