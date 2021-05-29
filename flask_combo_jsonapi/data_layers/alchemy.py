@@ -1,4 +1,8 @@
 """This module is a CRUD interface between resource managers and the sqlalchemy ORM"""
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from sqlalchemy.orm import Session as SessionType
 
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.orm.collections import InstrumentedList
@@ -33,6 +37,8 @@ from flask_combo_jsonapi.utils import SPLIT_REL
 
 class SqlalchemyDataLayer(BaseDataLayer):
     """Sqlalchemy data layer"""
+    if TYPE_CHECKING:
+        session: "SessionType"
 
     def __init__(self, kwargs):
         """Initialize an instance of SqlalchemyDataLayer

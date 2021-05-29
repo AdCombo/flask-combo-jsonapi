@@ -23,9 +23,6 @@ The development version can be downloaded from `its page at GitHub
 
 .. note::
 
-    If you don't have virtualenv please install it before
+    If you don't have virtualenv please install it
 
     $ pip install virtualenv
-
-
-Flask-RESTful requires Python version 2.7, 3.4 or 3.5.
