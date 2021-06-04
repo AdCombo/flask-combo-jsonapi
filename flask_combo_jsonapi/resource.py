@@ -65,7 +65,9 @@ class Resource(MethodView):
         method = getattr(self, request.method.lower(), None)
         if method is None and request.method == "HEAD":
             method = getattr(self, "get", None)
-        assert method is not None, f"Unimplemented method {request.method}"
+
+        if method is None:
+            raise AttributeError(f"Unimplemented method {request.method}")
 
         headers = {"Content-Type": "application/vnd.api+json"}
 

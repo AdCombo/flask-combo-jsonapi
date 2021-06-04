@@ -52,8 +52,8 @@ source_suffix = ".rst"
 master_doc = "index"
 
 # General information about the project.
-project = "flask-combo-jsonapi"
-copyright = "2020, AdCombo"
+project = "Flask-COMBO-JSONAPI"
+copyright = "2021, AdCombo"
 author = "AdCombo"
 
 # The version info for the project you're documenting, acts as replacement for
@@ -133,7 +133,6 @@ html_theme_options = {
     "github_user": "AdCombo",
     "github_repo": "flask-combo-jsonapi",
     "github_banner": True,
-    "travis_button": True,
     "show_related": True,
     "page_width": "1080px",
     "fixed_sidebar": True,
