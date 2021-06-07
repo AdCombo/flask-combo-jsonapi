@@ -12,7 +12,8 @@ from marshmallow import ValidationError
 
 from flask_combo_jsonapi.querystring import QueryStringManager as QSManager
 from flask_combo_jsonapi.pagination import add_pagination_links
-from flask_combo_jsonapi.exceptions import InvalidType, BadRequest, RelationNotFound, PluginMethodNotImplementedError
+from flask_combo_jsonapi.exceptions import InvalidType, BadRequest, RelationNotFound, PluginMethodNotImplementedError,\
+    ObjectNotFound
 from flask_combo_jsonapi.decorators import check_headers, check_method_requirements, jsonapi_exception_formatter
 from flask_combo_jsonapi.schema import compute_schema, get_relationships, get_model_field
 from flask_combo_jsonapi.data_layers.base import BaseDataLayer
@@ -233,6 +234,11 @@ class ResourceDetail(Resource, metaclass=ResourceMeta):
         qs = QSManager(request.args, self.schema)
 
         obj = self.get_object(kwargs, qs)
+
+        if obj is None:
+            url_field = getattr(self._data_layer, "url_field", "id")
+            value = f" '{kwargs.get(url_field)}'" if kwargs.get(url_field) else ""
+            raise ObjectNotFound(f"{self.data_layer['model'].__name__}{value} not found.")
 
         self.before_marshmallow(args, kwargs)
 
