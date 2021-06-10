@@ -879,6 +879,65 @@ def test_get_list_default_pagination_default_disabled(client, app_disabled_pagin
         assert 'next' not in response.json['links']
 
 
+def test_get_list_relationship_filter_with_dot_attribute(session, client, register_routes, person, person_2, computer,
+                                                         computer_2):
+    computer.person = person
+    computer_2.person = person_2
+    session.commit()
+
+    with client:
+        querystring = urlencode(
+            {
+                "filter": json.dumps(
+                    [
+                        {
+                            "name": "computers.serial",
+                            "op": "eq",
+                            "val": computer.serial,
+                        }
+                    ]
+                ),
+            }
+        )
+        response = client.get("/persons" + "?" + querystring, content_type="application/vnd.api+json")
+        assert response.status_code == 200
+        assert len(response.json['data']) == 1
+
+
+def test_get_list_simple_filter_relationship_with_dot_attribute(session, client, register_routes, person, person_2,
+                                                                computer, computer_2):
+    computer.person = person
+    computer_2.person = person_2
+    session.commit()
+
+    with client:
+        querystring = urlencode(
+            {
+                "filter[computers.serial]": computer.serial
+            }
+        )
+        response = client.get("/persons" + "?" + querystring, content_type="application/vnd.api+json")
+        assert response.status_code == 200
+        assert len(response.json['data']) == 1
+
+
+def test_get_list_simple_filter_relationship_id_complete(session, client, register_routes, person, person_2,
+                                                                computer,                                                                computer_2):
+    computer.person = person
+    computer_2.person = person_2
+    session.commit()
+
+    with client:
+        querystring = urlencode(
+            {
+                "filter[computers]": computer_2.id
+            }
+        )
+        response = client.get("/persons" + "?" + querystring, content_type="application/vnd.api+json")
+        assert response.status_code == 200
+        assert len(response.json['data']) == 1
+
+
 def test_get_list_with_simple_filter(client, register_routes, person, person_2):
     with client:
         querystring = urlencode(

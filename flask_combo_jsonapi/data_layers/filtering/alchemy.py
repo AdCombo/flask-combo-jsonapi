@@ -1,6 +1,7 @@
 """Helper to create sqlalchemy filters according to filter querystring parameter"""
 from typing import Any, List, Tuple
 
+from marshmallow_jsonapi.flask import Relationship
 from sqlalchemy import and_, or_, not_, sql
 from sqlalchemy.orm import aliased
 
@@ -8,7 +9,6 @@ from flask_combo_jsonapi.data_layers.shared import deserialize_field, create_fil
 from flask_combo_jsonapi.exceptions import InvalidFilters, PluginMethodNotImplementedError
 from flask_combo_jsonapi.schema import get_relationships, get_model_field
 from flask_combo_jsonapi.utils import SPLIT_REL
-
 
 Filter = sql.elements.BinaryExpression
 Join = List[Any]
@@ -98,12 +98,7 @@ class Node(object):
             value = self.value
 
             if isinstance(value, dict):
-                alias = aliased(self.related_model)
-                joins = [[alias, self.column]]
-                filters, new_joins = Node(self.related_model, value, self.resource, self.related_schema).resolve()
-
-                joins.extend(new_joins)
-                return filters, joins
+                return self._relationship_filtering(value)
 
             if SPLIT_REL in self.filter_.get('name', ''):
                 value = {
@@ -111,15 +106,19 @@ class Node(object):
                     'op': self.filter_['op'],
                     'val': value,
                 }
-                alias = aliased(self.related_model)
-                joins = [[alias, self.column]]
-                node = Node(alias, value, self.resource, self.related_schema)
-                filters, new_joins = node.resolve()
-                joins.extend(new_joins)
-                return filters, joins
+                return self._relationship_filtering(value)
+
+            marshmallow_field = self.schema._declared_fields[self.name]
+            if isinstance(marshmallow_field, Relationship):
+                value = {
+                    'name': marshmallow_field.id_field,
+                    'op': self.filter_['op'],
+                    'val': value,
+                }
+                return self._relationship_filtering(value)
 
             return self.create_filter(
-                marshmallow_field=self.schema._declared_fields[self.name],
+                marshmallow_field=marshmallow_field,
                 model_column=self.column,
                 operator=self.filter_['op'],
                 value=value,
@@ -132,6 +131,14 @@ class Node(object):
         if 'not' in self.filter_:
             filter, joins = Node(self.model, self.filter_['not'], self.resource, self.schema).resolve()
             return not_(filter), joins
+
+    def _relationship_filtering(self, value):
+        alias = aliased(self.related_model)
+        joins = [[alias, self.column]]
+        node = Node(alias, value, self.resource, self.related_schema)
+        filters, new_joins = node.resolve()
+        joins.extend(new_joins)
+        return filters, joins
 
     def _create_filters(self, type_filter: str) -> FilterAndJoins:
         """
@@ -179,10 +186,6 @@ class Node(object):
     @property
     def column(self):
         """Get the column object
-
-        :param DeclarativeMeta model: the model
-        :param str field: the field
-        :return InstrumentedAttribute: the column to filter on
         """
         field = self.name
 
