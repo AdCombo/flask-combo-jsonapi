@@ -15,6 +15,14 @@ Flask-COMBO-JSONAPI provides three kinds of resource managers with default metho
 
 You can rewrite each default method implementation to customize it. If you rewrite all default methods of a resource manager or if you rewrite a method and disable access to others, you don't have to set any attributes of your resource manager.
 
+All url are pased via helper class **QueryStringManager**, which make parsing url query string according json-api. If you want override implementation class used you can do it for 1 resource via attribute.
+    :qs_manager_class: default implementation via  **QueryStringManager**
+
+or globally via:
+.. code-block::python
+
+    api = Api(blueprint=api_blueprint, qs_manager_class=CustomQS)
+
 Required attributes
 -------------------
 

@@ -158,7 +158,7 @@ def engine(
         person_tag_model, person_single_tag_model, person_model,
         computer_model, string_json_attribute_person_model,
         address_model
-    ):
+):
     engine = create_engine("sqlite:///:memory:")
     person_tag_model.metadata.create_all(engine)
     person_single_tag_model.metadata.create_all(engine)
@@ -200,6 +200,17 @@ def person_2(session, person_model):
 @pytest.fixture()
 def computer(session, computer_model):
     computer_ = computer_model(serial="1")
+    session_ = session
+    session_.add(computer_)
+    session_.commit()
+    yield computer_
+    session_.delete(computer_)
+    session_.commit()
+
+
+@pytest.fixture()
+def computer_2(session, computer_model):
+    computer_ = computer_model(serial="2")
     session_ = session
     session_.add(computer_)
     session_.commit()
@@ -400,12 +411,49 @@ def person_list(session, person_model, dummy_decorator, person_schema, before_cr
         data_layer = {
             "model": person_model,
             "session": session,
-            "mzthods": {"before_create_object": before_create_object},
+            "methods": {"before_create_object": before_create_object},
         }
         get_decorators = [dummy_decorator]
         post_decorators = [dummy_decorator]
         get_schema_kwargs = dict()
         post_schema_kwargs = dict()
+
+    yield PersonList
+
+
+@pytest.fixture(scope="module")
+def custom_query_string_manager():
+    class QS(QSManager):
+        def _simple_filters(self, dict_):
+            return [{"name": key, "op": "in" if isinstance(value, list) else "eq", "val": value}
+                    for (key, value) in dict_.items()]
+
+    yield QS
+
+
+@pytest.fixture(scope="module")
+def person_list_custom_qs_manager(session, person_model, person_schema, custom_query_string_manager):
+    class PersonList(ResourceList):
+        schema = person_schema
+        data_layer = {
+            "model": person_model,
+            "session": session,
+        }
+        get_schema_kwargs = dict()
+        qs_manager_class = custom_query_string_manager
+
+    yield PersonList
+
+
+@pytest.fixture(scope="module")
+def person_list_2(session, person_model, person_schema):
+    class PersonList(ResourceList):
+        schema = person_schema
+        data_layer = {
+            "model": person_model,
+            "session": session,
+        }
+        get_schema_kwargs = dict()
 
     yield PersonList
 
@@ -507,7 +555,7 @@ def fixed_count_for_collection_count():
 
 @pytest.fixture(scope="module")
 def computer_list_resource_with_disable_collection_count(
-    session, computer_model, computer_schema, fixed_count_for_collection_count
+        session, computer_model, computer_schema, fixed_count_for_collection_count
 ):
     class ComputerList(ResourceList):
         disable_collection_count = True, fixed_count_for_collection_count
@@ -538,7 +586,7 @@ def computer_owner(session, computer_model, dummy_decorator, computer_schema):
 
 @pytest.fixture(scope="module")
 def string_json_attribute_person_detail(
-    session, string_json_attribute_person_model, string_json_attribute_person_schema
+        session, string_json_attribute_person_model, string_json_attribute_person_schema
 ):
     class StringJsonAttributePersonDetail(ResourceDetail):
         schema = string_json_attribute_person_schema
@@ -563,26 +611,41 @@ def api_blueprint(client):
 
 
 @pytest.fixture(scope="module")
+def register_routes_custom_qs(
+        client,
+        app,
+        api_blueprint,
+        custom_query_string_manager,
+        person_list_2,
+):
+    api = Api(blueprint=api_blueprint, qs_manager_class=custom_query_string_manager)
+    api.route(person_list_2, "person_list_qs", "/qs/persons")
+    api.init_app(app)
+
+
+@pytest.fixture(scope="module")
 def register_routes(
-    client,
-    app,
-    api_blueprint,
-    person_list,
-    person_detail,
-    person_computers,
-    person_list_raise_jsonapiexception,
-    person_list_raise_exception,
-    person_list_response,
-    person_list_without_schema,
-    computer_list,
-    computer_detail,
-    computer_list_resource_with_disable_collection_count,
-    computer_owner,
-    string_json_attribute_person_detail,
-    string_json_attribute_person_list,
+        client,
+        app,
+        api_blueprint,
+        person_list,
+        person_detail,
+        person_computers,
+        person_list_custom_qs_manager,
+        person_list_raise_jsonapiexception,
+        person_list_raise_exception,
+        person_list_response,
+        person_list_without_schema,
+        computer_list,
+        computer_detail,
+        computer_list_resource_with_disable_collection_count,
+        computer_owner,
+        string_json_attribute_person_detail,
+        string_json_attribute_person_list,
 ):
     api = Api(blueprint=api_blueprint)
     api.route(person_list, "person_list", "/persons")
+    api.route(person_list_custom_qs_manager, "person_list_custom_qs_manager", "/persons_qs")
     api.route(person_detail, "person_detail", "/persons/<int:person_id>")
     api.route(person_computers, "person_computers", "/persons/<int:person_id>/relationships/computers")
     api.route(person_computers, "person_computers_owned", "/persons/<int:person_id>/relationships/computers-owned")
@@ -775,6 +838,47 @@ def test_get_list_with_simple_filter(client, register_routes, person, person_2):
         )
         response = client.get("/persons" + "?" + querystring, content_type="application/vnd.api+json")
         assert response.status_code == 200
+        assert response.json["meta"]["count"] == 1
+
+
+def test_get_list_with_simple_filter_relationship_custom_qs(session, client, register_routes, person, person_2,
+                                                            computer, computer_2):
+    computer.person = person
+    computer_2.person = person_2
+    session.commit()
+    with client:
+        querystring = urlencode(
+            {
+                "filter[computers.id]": f'{computer_2.id},{computer.id}',
+                "include": "computers",
+                "sort": "-name",
+            }
+        )
+        response = client.get("/persons_qs" + "?" + querystring, content_type="application/vnd.api+json")
+        assert response.status_code == 200
+        assert len(response.json['data']) == 2
+        assert response.json['data'][0]['id'] == str(person_2.person_id)
+        assert response.json['data'][1]['id'] == str(person.person_id)
+
+
+def test_get_list_with_simple_filter_relationship_custom_qs_api(session, client, register_routes_custom_qs, person,
+                                                                person_2, computer, computer_2):
+    computer.person = person
+    computer_2.person = person_2
+    session.commit()
+    with client:
+        querystring = urlencode(
+            {
+                "filter[computers.id]": f'{computer_2.id},{computer.id}',
+                "include": "computers",
+                "sort": "-name",
+            }
+        )
+        response = client.get("/qs/persons" + "?" + querystring, content_type="application/vnd.api+json")
+        assert response.status_code == 200
+        assert len(response.json['data']) == 2
+        assert response.json['data'][0]['id'] == str(person_2.person_id)
+        assert response.json['data'][1]['id'] == str(person.person_id)
 
 
 def test_get_list_disable_pagination(client, register_routes):
@@ -1152,6 +1256,22 @@ def test_wrong_data_layer_kwargs_type():
             data_layer = list()
 
         PersonDetail()
+
+
+def test_get_list_with_simple_filter_relationship_error(session, client, register_routes, person, person_2,
+                                                        computer, computer_2):
+    computer.person = person
+    computer_2.person = person_2
+    session.commit()
+    with client:
+        querystring = urlencode(
+            {
+                "filter[computers.id]": f'{computer_2.id},{computer.id}',
+                "include": "computers"
+            }
+        )
+        response = client.get("/persons" + "?" + querystring, content_type="application/vnd.api+json")
+        assert response.status_code == 500
 
 
 def test_get_list_jsonapiexception(client, register_routes):
@@ -1547,7 +1667,7 @@ def test_post_relationship_missing_type(client, register_routes, computer, perso
 
 
 def test_post_relationship_missing_id(client, register_routes, computer, person):
-    payload = {"data": [{"type": "computer",}]}
+    payload = {"data": [{"type": "computer", }]}
 
     with client:
         response = client.post(
@@ -1629,7 +1749,7 @@ def test_patch_relationship_missing_type(client, register_routes, computer, pers
 
 
 def test_patch_relationship_missing_id(client, register_routes, computer, person):
-    payload = {"data": [{"type": "computer",}]}
+    payload = {"data": [{"type": "computer", }]}
 
     with client:
         response = client.patch(
@@ -1711,7 +1831,7 @@ def test_delete_relationship_missing_type(client, register_routes, computer, per
 
 
 def test_delete_relationship_missing_id(client, register_routes, computer, person):
-    payload = {"data": [{"type": "computer",}]}
+    payload = {"data": [{"type": "computer", }]}
 
     with client:
         response = client.delete(

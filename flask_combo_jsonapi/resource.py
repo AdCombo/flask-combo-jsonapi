@@ -52,6 +52,8 @@ class ResourceMeta(MethodViewType):
 class Resource(MethodView):
     """Base resource class"""
 
+    qs_manager_class = QSManager
+
     def __new__(cls):
         """Constructor of a resource instance"""
         if hasattr(cls, "_data_layer"):
@@ -117,7 +119,7 @@ class ResourceList(Resource, metaclass=ResourceMeta):
         """Retrieve a collection of objects"""
         self.before_get(args, kwargs)
 
-        qs = QSManager(request.args, self.schema)
+        qs = self.qs_manager_class(request.args, self.schema)
 
         objects_count, objects = self.get_collection(qs, kwargs)
 
@@ -152,7 +154,7 @@ class ResourceList(Resource, metaclass=ResourceMeta):
         """Create an object"""
         json_data = request.json or {}
 
-        qs = QSManager(request.args, self.schema)
+        qs = self.qs_manager_class(request.args, self.schema)
 
         schema = compute_schema(self.schema, getattr(self, "post_schema_kwargs", dict()), qs, qs.include)
 
@@ -231,7 +233,7 @@ class ResourceDetail(Resource, metaclass=ResourceMeta):
         """Get object details"""
         self.before_get(args, kwargs)
 
-        qs = QSManager(request.args, self.schema)
+        qs = self.qs_manager_class(request.args, self.schema)
 
         obj = self.get_object(kwargs, qs)
 
@@ -263,7 +265,7 @@ class ResourceDetail(Resource, metaclass=ResourceMeta):
         """Update an object"""
         json_data = request.json or {}
 
-        qs = QSManager(request.args, self.schema)
+        qs = self.qs_manager_class(request.args, self.schema)
         schema_kwargs = getattr(self, "patch_schema_kwargs", dict())
         schema_kwargs.update({"partial": True})
 
@@ -385,7 +387,7 @@ class ResourceRelationship(Resource, metaclass=ResourceMeta):
             "data": data,
         }
 
-        qs = QSManager(request.args, self.schema)
+        qs = self.qs_manager_class(request.args, self.schema)
         if qs.include:
             schema = compute_schema(self.schema, dict(), qs, qs.include)
 
