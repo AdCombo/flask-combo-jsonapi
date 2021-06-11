@@ -1,11 +1,10 @@
 """Helper to create pagination links according to jsonapi specification"""
 
 from __future__ import division
-from urllib.parse import urlencode
-from math import ceil
-from copy import copy
 
-from flask import current_app
+from copy import copy
+from math import ceil
+from urllib.parse import urlencode
 
 
 def add_pagination_links(data, object_count, querystring, base_url):
@@ -25,9 +24,9 @@ def add_pagination_links(data, object_count, querystring, base_url):
     if all_qs_args:
         links['self'] += '?' + urlencode(all_qs_args)
 
-    if querystring.pagination.get('size') != '0' and object_count > 1:
+    if querystring.pagination.get('size') != 0 and object_count > 1:
         # compute last link
-        page_size = int(querystring.pagination.get('size', 1)) or current_app.config['PAGE_SIZE']
+        page_size = querystring.pagination.get('size')
         last_page = int(ceil(object_count / page_size))
 
         if last_page > 1:
@@ -43,7 +42,7 @@ def add_pagination_links(data, object_count, querystring, base_url):
             links['last'] += '?' + urlencode(all_qs_args)
 
             # compute previous and next link
-            current_page = int(querystring.pagination.get('number', 0)) or 1
+            current_page = querystring.pagination.get('number') or 1
             if current_page > 1:
                 all_qs_args.update({'page[number]': current_page - 1})
                 links['prev'] = '?'.join((base_url, urlencode(all_qs_args)))

@@ -198,6 +198,21 @@ def person_2(session, person_model):
 
 
 @pytest.fixture()
+def persons(session, person_model):
+    persons = []
+    session_ = session
+    for i in range(100):
+        person_ = person_model(name=f"test{i}")
+        session_.add(person_)
+        persons.append(person_)
+    session_.commit()
+    yield persons
+    for person_ in persons:
+        session_.delete(person_)
+    session_.commit()
+
+
+@pytest.fixture()
 def computer(session, computer_model):
     computer_ = computer_model(serial="1")
     session_ = session
@@ -610,6 +625,12 @@ def api_blueprint(client):
     yield bp
 
 
+@pytest.fixture()
+def app_disabled_pagination(app):
+    app.config['PAGE_SIZE'] = 0
+    yield app
+    app.config['PAGE_SIZE'] = 30
+
 @pytest.fixture(scope="module")
 def register_routes_custom_qs(
         client,
@@ -621,7 +642,6 @@ def register_routes_custom_qs(
     api = Api(blueprint=api_blueprint, qs_manager_class=custom_query_string_manager)
     api.route(person_list_2, "person_list_qs", "/qs/persons")
     api.init_app(app)
-
 
 @pytest.fixture(scope="module")
 def register_routes(
@@ -823,6 +843,27 @@ def test_get_list(client, register_routes, person, person_2):
         )
         response = client.get("/persons" + "?" + querystring, content_type="application/vnd.api+json")
         assert response.status_code == 200
+
+
+def test_get_list_default_pagination(client, register_routes, persons):
+    with client:
+        response = client.get("/persons", content_type="application/vnd.api+json")
+        assert response.status_code == 200
+        assert len(response.json['data']) == 30
+        assert response.json['meta']['count'] == len(persons)
+        assert 'last' in response.json['links']
+        assert 'first' in response.json['links']
+        assert 'next' in response.json['links']
+
+
+def test_get_list_default_pagination_default_disabled(client, app_disabled_pagination, register_routes, persons):
+    with client:
+        response = client.get("/persons", content_type="application/vnd.api+json")
+        assert response.status_code == 200
+        assert len(response.json['data']) == len(persons)
+        assert 'last' not in response.json['links']
+        assert 'first' not in response.json['links']
+        assert 'next' not in response.json['links']
 
 
 def test_get_list_with_simple_filter(client, register_routes, person, person_2):

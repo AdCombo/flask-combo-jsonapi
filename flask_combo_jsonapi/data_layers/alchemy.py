@@ -12,7 +12,6 @@ from sqlalchemy.orm import joinedload, ColumnProperty, RelationshipProperty
 from marshmallow import class_registry
 from marshmallow.base import SchemaABC
 
-from flask import current_app
 from flask_combo_jsonapi.data_layers.base import BaseDataLayer
 from flask_combo_jsonapi.data_layers.sorting.alchemy import create_sorts
 from flask_combo_jsonapi.exceptions import (
@@ -644,13 +643,13 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :param dict paginate_info: pagination information
         :return Query: the paginated query
         """
-        if int(paginate_info.get("size", 1)) == 0:
+        if paginate_info.get("size") == 0:
             return query
 
-        page_size = int(paginate_info.get("size", 0)) or current_app.config["PAGE_SIZE"]
+        page_size = paginate_info.get("size")
         query = query.limit(page_size)
         if paginate_info.get("number"):
-            query = query.offset((int(paginate_info["number"]) - 1) * page_size)
+            query = query.offset((paginate_info["number"] - 1) * page_size)
 
         return query
 
