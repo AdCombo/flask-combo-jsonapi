@@ -15,12 +15,14 @@ from flask_combo_jsonapi.resource import ResourceList, ResourceRelationship
 class Api(object):
     """The main class of the Api"""
 
-    def __init__(self, app=None, blueprint=None, decorators=None, plugins=None):
+    def __init__(self, app=None, blueprint=None, decorators=None, plugins=None, qs_manager_class=None):
         """Initialize an instance of the Api
 
         :param app: the flask application
         :param blueprint: a flask blueprint
         :param tuple decorators: a tuple of decorators plugged to each resource methods
+        :param plugins: list of plugins
+        :param qs_manager_class: custom query string manager used in whole API
         """
         self.app = app
         self._app = app
@@ -29,6 +31,7 @@ class Api(object):
         self.resource_registry = []
         self.decorators = decorators or tuple()
         self.plugins = plugins if plugins is not None else []
+        self.qs_manager_class = qs_manager_class
 
         if app is not None:
             self.init_app(app, blueprint)
@@ -81,6 +84,9 @@ class Api(object):
             except PluginMethodNotImplementedError:
                 pass
         setattr(resource, 'plugins', self.plugins)
+
+        if self.qs_manager_class:
+            setattr(resource, 'qs_manager_class', self.qs_manager_class)
 
         resource.view = view
         url_rule_options = kwargs.get('url_rule_options') or dict()
