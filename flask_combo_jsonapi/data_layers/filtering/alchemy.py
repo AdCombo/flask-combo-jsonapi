@@ -1,7 +1,7 @@
 """Helper to create sqlalchemy filters according to filter querystring parameter"""
 from typing import Any, List, Tuple
 
-from marshmallow_jsonapi.flask import Relationship
+from marshmallow_jsonapi.fields import Relationship
 from sqlalchemy import and_, or_, not_, sql
 from sqlalchemy.orm import aliased
 
