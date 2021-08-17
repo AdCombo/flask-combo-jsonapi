@@ -4,11 +4,12 @@ import pytest
 from sqlalchemy import create_engine, Column, Integer, DateTime, String, ForeignKey
 from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy.ext.declarative import declarative_base
-from flask import Blueprint, make_response, json
+from flask import Blueprint, make_response, json, request
 from marshmallow_jsonapi.flask import Schema, Relationship
 from marshmallow import Schema as MarshmallowSchema
 from marshmallow_jsonapi import fields
 from marshmallow import ValidationError
+from werkzeug.exceptions import Unauthorized
 
 from flask_combo_jsonapi import Api, ResourceList, ResourceDetail, ResourceRelationship, JsonApiException
 from flask_combo_jsonapi.pagination import add_pagination_links
@@ -231,9 +232,26 @@ def address(session, address_model):
 
 
 @pytest.fixture(scope="module")
-def dummy_decorator():
+def custom_auth_decorator():
     def deco(f):
         def wrapper_f(*args, **kwargs):
+            auth = request.headers.get("auth", None)
+            if auth == '123':
+                raise Unauthorized()
+            return f(*args, **kwargs)
+
+        return wrapper_f
+
+    yield deco
+
+
+@pytest.fixture(scope="module")
+def custom_auth_decorator_2():
+    def deco(f):
+        def wrapper_f(*args, **kwargs):
+            auth = request.headers.get("auth", None)
+            if auth == '1234':
+                raise Unauthorized()
             return f(*args, **kwargs)
 
         return wrapper_f
@@ -405,7 +423,7 @@ def before_delete_object():
 
 
 @pytest.fixture(scope="module")
-def person_list(session, person_model, dummy_decorator, person_schema, before_create_object):
+def person_list(session, person_model, person_schema, before_create_object):
     class PersonList(ResourceList):
         schema = person_schema
         data_layer = {
@@ -413,8 +431,6 @@ def person_list(session, person_model, dummy_decorator, person_schema, before_cr
             "session": session,
             "methods": {"before_create_object": before_create_object},
         }
-        get_decorators = [dummy_decorator]
-        post_decorators = [dummy_decorator]
         get_schema_kwargs = dict()
         post_schema_kwargs = dict()
 
@@ -459,7 +475,8 @@ def person_list_2(session, person_model, person_schema):
 
 
 @pytest.fixture(scope="module")
-def person_detail(session, person_model, dummy_decorator, person_schema, before_update_object, before_delete_object):
+def person_detail(session, person_model, person_schema, before_update_object, before_delete_object,
+                  custom_auth_decorator_2):
     class PersonDetail(ResourceDetail):
         schema = person_schema
         data_layer = {
@@ -468,25 +485,19 @@ def person_detail(session, person_model, dummy_decorator, person_schema, before_
             "url_field": "person_id",
             "methods": {"before_update_object": before_update_object, "before_delete_object": before_delete_object},
         }
-        get_decorators = [dummy_decorator]
-        patch_decorators = [dummy_decorator]
-        delete_decorators = [dummy_decorator]
         get_schema_kwargs = dict()
         patch_schema_kwargs = dict()
         delete_schema_kwargs = dict()
+        decorators = (custom_auth_decorator_2,)
 
     yield PersonDetail
 
 
 @pytest.fixture(scope="module")
-def person_computers(session, person_model, dummy_decorator, person_schema):
+def person_computers(session, person_model, person_schema):
     class PersonComputersRelationship(ResourceRelationship):
         schema = person_schema
         data_layer = {"session": session, "model": person_model, "url_field": "person_id"}
-        get_decorators = [dummy_decorator]
-        post_decorators = [dummy_decorator]
-        patch_decorators = [dummy_decorator]
-        delete_decorators = [dummy_decorator]
 
     yield PersonComputersRelationship
 
@@ -566,7 +577,7 @@ def computer_list_resource_with_disable_collection_count(
 
 
 @pytest.fixture(scope="module")
-def computer_detail(session, computer_model, dummy_decorator, computer_schema):
+def computer_detail(session, computer_model, computer_schema):
     class ComputerDetail(ResourceDetail):
         schema = computer_schema
         data_layer = {"model": computer_model, "session": session}
@@ -576,7 +587,7 @@ def computer_detail(session, computer_model, dummy_decorator, computer_schema):
 
 
 @pytest.fixture(scope="module")
-def computer_owner(session, computer_model, dummy_decorator, computer_schema):
+def computer_owner(session, computer_model, computer_schema):
     class ComputerOwnerRelationship(ResourceRelationship):
         schema = computer_schema
         data_layer = {"session": session, "model": computer_model}
@@ -628,6 +639,7 @@ def register_routes(
         client,
         app,
         api_blueprint,
+        custom_auth_decorator,
         person_list,
         person_detail,
         person_computers,
@@ -643,7 +655,7 @@ def register_routes(
         string_json_attribute_person_detail,
         string_json_attribute_person_list,
 ):
-    api = Api(blueprint=api_blueprint)
+    api = Api(blueprint=api_blueprint, decorators=(custom_auth_decorator,))
     api.route(person_list, "person_list", "/persons")
     api.route(person_list_custom_qs_manager, "person_list_custom_qs_manager", "/persons_qs")
     api.route(person_detail, "person_detail", "/persons/<int:person_id>")
@@ -941,6 +953,7 @@ def test_post_list_nested(client, register_routes, computer):
         assert response.status_code == 201
         assert json.loads(response.get_data())["data"]["attributes"]["tags"][0]["key"] == "k1"
 
+
 def test_post_list_nested_field(client, register_routes):
     """
     Test a schema contains a nested field is correctly serialized and deserialized
@@ -989,6 +1002,19 @@ def test_get_detail(client, register_routes, person):
     with client:
         response = client.get("/persons/" + str(person.person_id), content_type="application/vnd.api+json")
         assert response.status_code == 200
+
+
+def test_get_detail_custom_auth_decorator_global(client, register_routes, person):
+    with client:
+        response = client.get("/persons/" + str(person.person_id), content_type="application/vnd.api+json",
+                              headers={'auth': '123'})
+        assert response.status_code == 401
+
+def test_get_detail_custom_auth_decorator_resource_level(client, register_routes, person):
+    with client:
+        response = client.get("/persons/" + str(person.person_id), content_type="application/vnd.api+json",
+                              headers={'auth': '1234'})
+        assert response.status_code == 401
 
 
 def test_patch_detail(client, register_routes, computer, person):

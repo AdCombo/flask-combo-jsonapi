@@ -91,6 +91,11 @@ class Api(object):
         resource.view = view
         url_rule_options = kwargs.get('url_rule_options') or dict()
 
+        if hasattr(resource, 'decorators'):
+            resource.decorators += self.decorators
+        else:
+            resource.decorators = self.decorators
+
         view_func = resource.as_view(view)
 
         if 'blueprint' in kwargs:
