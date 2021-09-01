@@ -92,7 +92,7 @@ class QueryStringManager(object):
     @property
     def pagination(self):
         """Return parameters page[size] and page[number) as a dict.
-        If missing parmeter size  then is used default parameter PAGE_SIZE.
+        If missing parmeter `size` then default parameter PAGE_SIZE is used.
 
         :return dict: a dict of pagination information
 
@@ -112,7 +112,7 @@ class QueryStringManager(object):
             except ValueError:
                 raise BadRequest("Parse error", source={'parameter': 'page[{}]'.format(key)})
 
-        result.setdefault('size',current_app.config.get('PAGE_SIZE', 30))
+        result.setdefault('size', current_app.config.get('PAGE_SIZE', 30))
 
         if current_app.config.get('ALLOW_DISABLE_PAGINATION', True) is False and result.get('size') == 0:
             raise BadRequest("You are not allowed to disable pagination", source={'parameter': 'page[size]'})
