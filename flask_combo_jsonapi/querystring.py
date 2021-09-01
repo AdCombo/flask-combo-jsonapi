@@ -91,22 +91,16 @@ class QueryStringManager(object):
 
     @property
     def pagination(self):
-        """Return all page parameters as a dict.
+        """Return parameters page[size] and page[number) as a dict.
+        If missing parmeter `size` then default parameter PAGE_SIZE is used.
 
         :return dict: a dict of pagination information
-
-        To allow multiples strategies, all parameters starting with `page` will be included. e.g::
-
-            {
-                "number": '25',
-                "size": '150',
-            }
 
         Example with number strategy::
 
             >>> query_string = {'page[number]': '25', 'page[size]': '10'}
             >>> parsed_query.pagination
-            {'number': '25', 'size': '10'}
+            {'number': 25, 'size': 10}
         """
         # check values type
         result = self._get_key_values('page')
@@ -114,11 +108,13 @@ class QueryStringManager(object):
             if key not in ('number', 'size'):
                 raise BadRequest("{} is not a valid parameter of pagination".format(key), source={'parameter': 'page'})
             try:
-                int(value)
+                result[key] = int(value)
             except ValueError:
                 raise BadRequest("Parse error", source={'parameter': 'page[{}]'.format(key)})
 
-        if current_app.config.get('ALLOW_DISABLE_PAGINATION', True) is False and int(result.get('size', 1)) == 0:
+        result.setdefault('size', current_app.config.get('PAGE_SIZE', 30))
+
+        if current_app.config.get('ALLOW_DISABLE_PAGINATION', True) is False and result.get('size') == 0:
             raise BadRequest("You are not allowed to disable pagination", source={'parameter': 'page[size]'})
 
         if current_app.config.get('MAX_PAGE_SIZE') is not None and 'size' in result:
