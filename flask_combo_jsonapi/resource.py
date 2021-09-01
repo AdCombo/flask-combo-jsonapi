@@ -281,6 +281,15 @@ class ResourceDetail(Resource, metaclass=ResourceMeta):
             except PluginMethodNotImplementedError:
                 pass
 
+        if "data" not in json_data:
+            raise BadRequest('Missing "data" node', source={"pointer": "/data"})
+        if "id" not in json_data["data"]:
+            raise BadRequest('Missing id in "data" node', source={"pointer": "/data/id"})
+        if str(json_data["data"]["id"]) != str(kwargs[getattr(self._data_layer, "url_field", "id")]):
+            raise BadRequest(
+                "Value of id does not match the resource identifier in url", source={"pointer": "/data/id"}
+            )
+
         try:
             data = schema.load(json_data)
         except IncorrectTypeError as e:
@@ -295,13 +304,6 @@ class ResourceDetail(Resource, metaclass=ResourceMeta):
                 message["status"] = "422"
                 message["title"] = "Validation error"
             return errors, 422
-
-        if "id" not in json_data["data"]:
-            raise BadRequest('Missing id in "data" node', source={"pointer": "/data/id"})
-        if str(json_data["data"]["id"]) != str(kwargs[getattr(self._data_layer, "url_field", "id")]):
-            raise BadRequest(
-                "Value of id does not match the resource identifier in url", source={"pointer": "/data/id"}
-            )
 
         self.before_patch(args, kwargs, data=data)
 
