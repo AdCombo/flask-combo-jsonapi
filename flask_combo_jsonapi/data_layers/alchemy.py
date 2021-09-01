@@ -596,7 +596,12 @@ class SqlalchemyDataLayer(BaseDataLayer):
 
                         nested_fields_to_apply.append({"field": key, "value": nested_objects})
                     else:
-                        nested_fields_to_apply.append({"field": key, "value": nested_model(**value)})
+                        nested_field = getattr(obj, key)
+                        if nested_field:
+                            for attribute, new_value in value.items():
+                                setattr(nested_field, attribute, new_value)
+                        else:
+                            nested_fields_to_apply.append({"field": key, "value": nested_model(**value)})
                 elif isinstance(nested_field_inspection.property, ColumnProperty):
                     nested_fields_to_apply.append({"field": key, "value": value})
                 else:
@@ -833,7 +838,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
         pass
 
     def after_get_relationship(
-        self, obj, related_objects, relationship_field, related_type_, related_id_field, view_kwargs,
+            self, obj, related_objects, relationship_field, related_type_, related_id_field, view_kwargs,
     ):
         """Make work after to get information about a relationship
 

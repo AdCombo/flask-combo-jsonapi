@@ -1059,6 +1059,44 @@ def test_patch_detail_nested(client, register_routes, computer, person):
         assert response_dict["data"]["attributes"]["single_tag"]["key"] == "new_single_key"
 
 
+def test_patch_detail_nested_partial_update(client, register_routes, computer, person):
+    payload = {
+        "data": {
+            "id": str(person.person_id),
+            "type": "person",
+            "attributes": {
+                "name": "test2",
+                "tags": [{"key": "new_key", "value": "new_value"}],
+                "single_tag": {"key": "new_single_key", "value": "new_single_value"},
+            },
+            "relationships": {"computers": {"data": [{"type": "computer", "id": str(computer.id)}]}},
+        }
+    }
+
+    payload_partial_update = {
+        "data": {
+            "id": str(person.person_id),
+            "type": "person",
+            "attributes": {
+                "single_tag": {"value": "new_single_value_partial"},
+            }
+        }
+    }
+    with client:
+        response = client.patch(
+            "/persons/" + str(person.person_id), data=json.dumps(payload), content_type="application/vnd.api+json"
+        )
+        assert response.status_code == 200
+        response = client.patch(
+            "/persons/" + str(person.person_id), data=json.dumps(payload_partial_update), content_type="application/vnd.api+json"
+        )
+        assert response.status_code == 200
+        response_dict = json.loads(response.get_data())
+        assert response_dict["data"]["attributes"]["tags"][0]["key"] == "new_key"
+        assert response_dict["data"]["attributes"]["single_tag"]["key"] == "new_single_key"
+        assert response_dict["data"]["attributes"]["single_tag"]["value"] == "new_single_value_partial"
+
+
 def test_delete_detail(client, register_routes, person):
     with client:
         response = client.delete("/persons/" + str(person.person_id), content_type="application/vnd.api+json")
