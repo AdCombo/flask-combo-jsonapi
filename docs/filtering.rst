@@ -67,7 +67,7 @@ There is a shortcut to achieve the same filtering:
 
 .. sourcecode:: http
 
-    GET /persons?filter=[{"name":"computers__serial","op":"ilike","val":"%Amstrad%"}] HTTP/1.1
+    GET /persons?filter=[{"name":"computers.serial","op":"ilike","val":"%Amstrad%"}] HTTP/1.1
     Accept: application/vnd.api+json
 
 You can also use boolean combination of operations:
@@ -76,7 +76,7 @@ You can also use boolean combination of operations:
 
     GET /persons?filter=[
       {
-        "name":"computers__serial",
+        "name":"computers.serial",
         "op":"ilike",
         "val":"%Amstrad%"
       },
@@ -154,7 +154,7 @@ equals:
 
 .. sourcecode:: http
 
-    GET /persons?filter[name]=[{"name":"name","op":"eq","val":"John"}] HTTP/1.1
+    GET /persons?filter=[{"name":"name","op":"eq","val":"John"}] HTTP/1.1
     Accept: application/vnd.api+json
 
 
@@ -169,4 +169,17 @@ which is equal to:
 
 .. sourcecode:: http
 
-    GET /persons?filter[name]=[{"name":"name","op":"eq","val":"John"}, {"name":"gender","op":"eq","val":"male"}] HTTP/1.1
+    GET /persons?filter=[{"name":"name","op":"eq","val":"John"}, {"name":"gender","op":"eq","val":"male"}] HTTP/1.1
+
+You can also use relationship attribute in a request:
+
+.. sourcecode:: http
+
+    GET /persons?filter[computers]=1 HTTP/1.1
+    Accept: application/vnd.api+json
+
+which is equal to:
+
+.. sourcecode:: http
+
+    GET /persons?filter=[{"name":"computers.id","op":"eq","val":"1"}] HTTP/1.1

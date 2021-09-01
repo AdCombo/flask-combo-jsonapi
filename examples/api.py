@@ -1,6 +1,5 @@
 from flask import Flask
 from marshmallow import pre_load
-from sqlalchemy import UniqueConstraint
 
 from flask_combo_jsonapi import Api, ResourceDetail, ResourceList, ResourceRelationship
 from flask_combo_jsonapi.data_layers.alchemy import SqlalchemyDataLayer
