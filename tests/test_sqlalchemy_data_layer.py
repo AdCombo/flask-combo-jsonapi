@@ -782,7 +782,8 @@ def test_resource(app, person_model, person_schema, session, monkeypatch):
         with pytest.raises(Exception):
             r.dispatch_request()
         rl.post()
-        rd.patch()
+        with pytest.raises(Exception):
+            rd.patch()
 
 
 def test_compute_schema(person_schema):
@@ -1620,7 +1621,7 @@ def test_patch_detail_missing_id(client, register_routes, computer, person):
 def test_patch_detail_wrong_id(client, register_routes, computer, person):
     payload = {
         "data": {
-            "id": "error",
+            "id": str(person.person_id + 1),
             "type": "person",
             "attributes": {"name": "test2"},
             "relationships": {"computers": {"data": [{"type": "computer", "id": str(computer.id)}]}},
@@ -1631,7 +1632,7 @@ def test_patch_detail_wrong_id(client, register_routes, computer, person):
         response = client.patch(
             "/persons/" + str(person.person_id), data=json.dumps(payload), content_type="application/vnd.api+json"
         )
-        assert response.status_code == 422
+        assert response.status_code == 400
 
 
 def test_post_relationship_no_data(client, register_routes, computer, person):
