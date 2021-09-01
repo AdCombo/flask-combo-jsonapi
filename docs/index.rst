@@ -73,6 +73,11 @@ Flask-COMBO-JSONAPI with Flask.
    oauth
    configuration
 
+.. toctree::
+   :maxdepth: 2
+
+   changelog
+
 
 .. include:: ./minimal_api_example.rst
 
