@@ -57,6 +57,7 @@ Flask-COMBO-JSONAPI with Flask.
 
    installation
    minimal_api_example
+   api_filtering_example
    quickstart
    logical_data_abstraction
    resource_manager
