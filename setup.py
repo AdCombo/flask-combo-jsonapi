@@ -1,7 +1,7 @@
 import os
 from setuptools import setup, find_packages
 
-__version__ = "1.1.0"
+__version__ = "1.2.0"
 
 
 requirements_filepath = os.path.join(os.path.dirname(__name__), "requirements.txt")
@@ -36,6 +36,8 @@ setup(
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
         "Topic :: Internet",
     ],
     keywords="web api rest jsonapi flask sqlalchemy marshmallow",
