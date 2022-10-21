@@ -630,11 +630,15 @@ def string_json_attribute_person_list(session, string_json_attribute_person_mode
     yield StringJsonAttributePersonList
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture()
 def api_blueprint(client):
     bp = Blueprint("api", __name__)
     yield bp
 
+@pytest.fixture()
+def api_blueprint_custom(client):
+    bp = Blueprint("api_custom", __name__)
+    yield bp
 
 @pytest.fixture()
 def app_disabled_pagination(app):
@@ -642,19 +646,20 @@ def app_disabled_pagination(app):
     yield app
     app.config['PAGE_SIZE'] = 30
 
-@pytest.fixture(scope="module")
+@pytest.fixture()
 def register_routes_custom_qs(
         client,
         app,
-        api_blueprint,
+        api_blueprint_custom,
+        register_routes,
         custom_query_string_manager,
         person_list_2,
 ):
-    api = Api(blueprint=api_blueprint, qs_manager_class=custom_query_string_manager)
+    api = Api(blueprint=api_blueprint_custom, qs_manager_class=custom_query_string_manager)
     api.route(person_list_2, "person_list_qs", "/qs/persons")
     api.init_app(app)
 
-@pytest.fixture(scope="module")
+@pytest.fixture()
 def register_routes(
         client,
         app,
@@ -2103,7 +2108,7 @@ def test_relationship_containing_hyphens(client, register_routes, person_compute
     assert response.status_code == 200
 
 
-def test__sqlalchemy_data_layer__disable_collection_count(client, fixed_count_for_collection_count):
+def test__sqlalchemy_data_layer__disable_collection_count(client,register_routes, fixed_count_for_collection_count):
     """
     :param client:
     :param fixed_count_for_collection_count:

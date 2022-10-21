@@ -1,52 +1,26 @@
 """This module contains the logic of resource management"""
 
 import inspect
+import typing as t
+
 import simplejson as json
 
 from werkzeug.wrappers import Response
 from flask import request, url_for, make_response
 from flask.wrappers import Response as FlaskResponse
-from flask.views import MethodView, MethodViewType
+from flask.views import MethodView
 from marshmallow_jsonapi.exceptions import IncorrectTypeError
 from marshmallow import ValidationError
 
 from flask_combo_jsonapi.querystring import QueryStringManager as QSManager
 from flask_combo_jsonapi.pagination import add_pagination_links
-from flask_combo_jsonapi.exceptions import InvalidType, BadRequest, RelationNotFound, PluginMethodNotImplementedError,\
+from flask_combo_jsonapi.exceptions import InvalidType, BadRequest, RelationNotFound, PluginMethodNotImplementedError, \
     ObjectNotFound
 from flask_combo_jsonapi.decorators import check_headers, check_method_requirements, jsonapi_exception_formatter
 from flask_combo_jsonapi.schema import compute_schema, get_relationships, get_model_field
 from flask_combo_jsonapi.data_layers.base import BaseDataLayer
 from flask_combo_jsonapi.data_layers.alchemy import SqlalchemyDataLayer
 from flask_combo_jsonapi.utils import JSONEncoder
-
-
-class ResourceMeta(MethodViewType):
-    """Meta class to initilize the data layer and decorators of a resource"""
-
-    def __new__(cls, name, bases, d):
-        """Constructor of a resource class"""
-        rv = super().__new__(cls, name, bases, d)
-        if "data_layer" in d:
-            if not isinstance(d["data_layer"], dict):
-                raise Exception(f"You must provide a data layer information as dict in {cls.__name__}")
-
-            if d["data_layer"].get("class") is not None and BaseDataLayer not in inspect.getmro(
-                d["data_layer"]["class"]
-            ):
-                raise Exception(f"You must provide a data layer class inherited from BaseDataLayer in {cls.__name__}")
-
-            data_layer_cls = d["data_layer"].get("class", SqlalchemyDataLayer)
-            data_layer_kwargs = d["data_layer"]
-            rv._data_layer = data_layer_cls(data_layer_kwargs)
-
-        rv.decorators = (check_headers,)
-        if "decorators" in d:
-            rv.decorators += d["decorators"]
-
-        rv.plugins = d.get("plugins", [])
-
-        return rv
 
 
 class Resource(MethodView):
@@ -61,6 +35,30 @@ class Resource(MethodView):
             cls._data_layer.post_init()
 
         return super().__new__(cls)
+
+    def __init_subclass__(cls, **kwargs: t.Any) -> None:
+        """Constructor of a resource class"""
+        super().__init_subclass__(**kwargs)
+        if hasattr(cls, "data_layer"):
+            if not isinstance(cls.data_layer, dict):
+                raise Exception(f"You must provide a data layer information as dict in {cls.__name__}")
+
+            if cls.data_layer.get("class") is not None and BaseDataLayer not in inspect.getmro(
+                    cls.data_layer["class"]
+            ):
+                raise Exception(f"You must provide a data layer class inherited from BaseDataLayer in {cls.__name__}")
+
+            data_layer_cls = cls.data_layer.get("class", SqlalchemyDataLayer)
+            data_layer_kwargs = cls.data_layer
+            cls._data_layer = data_layer_cls(data_layer_kwargs)
+
+        if check_headers not in cls.decorators:
+            decorators = [check_headers,]
+            decorators.extend(cls.decorators)
+            cls.decorators =  decorators
+
+        if not hasattr(cls, "plugins"):
+            cls.plugins = []
 
     @jsonapi_exception_formatter
     def dispatch_request(self, *args, **kwargs):
@@ -111,7 +109,7 @@ class Resource(MethodView):
         return make_response(json_reponse, status_code, headers)
 
 
-class ResourceList(Resource, metaclass=ResourceMeta):
+class ResourceList(Resource):
     """Base class of a resource list manager"""
 
     @check_method_requirements
@@ -225,7 +223,7 @@ class ResourceList(Resource, metaclass=ResourceMeta):
         return self._data_layer.create_object(data, kwargs)
 
 
-class ResourceDetail(Resource, metaclass=ResourceMeta):
+class ResourceDetail(Resource):
     """Base class of a resource detail manager"""
 
     @check_method_requirements
@@ -369,7 +367,7 @@ class ResourceDetail(Resource, metaclass=ResourceMeta):
         self._data_layer.delete_object(obj, kwargs)
 
 
-class ResourceRelationship(Resource, metaclass=ResourceMeta):
+class ResourceRelationship(Resource):
     """Base class of a resource relationship manager"""
 
     @check_method_requirements
