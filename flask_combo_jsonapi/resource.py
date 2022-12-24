@@ -36,30 +36,6 @@ class Resource(MethodView):
 
         return super().__new__(cls)
 
-    def __init_subclass__(cls, **kwargs: t.Any) -> None:
-        """Constructor of a resource class"""
-        super().__init_subclass__(**kwargs)
-        if hasattr(cls, "data_layer"):
-            if not isinstance(cls.data_layer, dict):
-                raise Exception(f"You must provide a data layer information as dict in {cls.__name__}")
-
-            if cls.data_layer.get("class") is not None and BaseDataLayer not in inspect.getmro(
-                    cls.data_layer["class"]
-            ):
-                raise Exception(f"You must provide a data layer class inherited from BaseDataLayer in {cls.__name__}")
-
-            data_layer_cls = cls.data_layer.get("class", SqlalchemyDataLayer)
-            data_layer_kwargs = cls.data_layer
-            cls._data_layer = data_layer_cls(data_layer_kwargs)
-
-        if check_headers not in cls.decorators:
-            decorators = [check_headers,]
-            decorators.extend(cls.decorators)
-            cls.decorators =  decorators
-
-        if not hasattr(cls, "plugins"):
-            cls.plugins = []
-
     @jsonapi_exception_formatter
     def dispatch_request(self, *args, **kwargs):
         """Logic of how to handle a request"""
@@ -111,6 +87,36 @@ class Resource(MethodView):
 
 class ResourceList(Resource):
     """Base class of a resource list manager"""
+
+    def __init__(self):
+        """Constructor of a resource instance"""
+        super().__init__()
+        if not hasattr(self, "plugins"):
+            self.plugins = []
+
+    def __init_subclass__(cls, **kwargs: t.Any) -> None:
+        """Constructor of a resource class"""
+        super().__init_subclass__(**kwargs)
+        if hasattr(cls, "data_layer"):
+            if not isinstance(cls.data_layer, dict):
+                raise Exception(f"You must provide a data layer information as dict in {cls.__name__}")
+
+            if cls.data_layer.get("class") is not None and BaseDataLayer not in inspect.getmro(
+                    cls.data_layer["class"]
+            ):
+                raise Exception(f"You must provide a data layer class inherited from BaseDataLayer in {cls.__name__}")
+
+            data_layer_cls = cls.data_layer.get("class", SqlalchemyDataLayer)
+            data_layer_kwargs = cls.data_layer
+            cls._data_layer = data_layer_cls(data_layer_kwargs)
+
+        if check_headers not in cls.decorators:
+            decorators = [check_headers,]
+            decorators.extend(cls.decorators)
+            cls.decorators = decorators
+
+        if not hasattr(cls, "plugins"):
+            cls.plugins = []
 
     @check_method_requirements
     def get(self, *args, **kwargs):
@@ -225,6 +231,36 @@ class ResourceList(Resource):
 
 class ResourceDetail(Resource):
     """Base class of a resource detail manager"""
+
+    def __init__(self):
+        """Constructor of a resource instance"""
+        super().__init__()
+        if not hasattr(self, "plugins"):
+            self.plugins = []
+
+    def __init_subclass__(cls, **kwargs: t.Any) -> None:
+        """Constructor of a resource class"""
+        super().__init_subclass__(**kwargs)
+        if hasattr(cls, "data_layer"):
+            if not isinstance(cls.data_layer, dict):
+                raise Exception(f"You must provide a data layer information as dict in {cls.__name__}")
+
+            if cls.data_layer.get("class") is not None and BaseDataLayer not in inspect.getmro(
+                    cls.data_layer["class"]
+            ):
+                raise Exception(f"You must provide a data layer class inherited from BaseDataLayer in {cls.__name__}")
+
+            data_layer_cls = cls.data_layer.get("class", SqlalchemyDataLayer)
+            data_layer_kwargs = cls.data_layer
+            cls._data_layer = data_layer_cls(data_layer_kwargs)
+
+        if check_headers not in cls.decorators:
+            decorators = [check_headers,]
+            decorators.extend(cls.decorators)
+            cls.decorators = decorators
+
+        if not hasattr(cls, "plugins"):
+            cls.plugins = []
 
     @check_method_requirements
     def get(self, *args, **kwargs):
@@ -369,6 +405,36 @@ class ResourceDetail(Resource):
 
 class ResourceRelationship(Resource):
     """Base class of a resource relationship manager"""
+
+    def __init__(self):
+        """Constructor of a resource instance"""
+        super().__init__()
+        if not hasattr(self, "plugins"):
+            self.plugins = []
+
+    def __init_subclass__(cls, **kwargs: t.Any) -> None:
+        """Constructor of a resource class"""
+        super().__init_subclass__(**kwargs)
+        if hasattr(cls, "data_layer"):
+            if not isinstance(cls.data_layer, dict):
+                raise Exception(f"You must provide a data layer information as dict in {cls.__name__}")
+
+            if cls.data_layer.get("class") is not None and BaseDataLayer not in inspect.getmro(
+                    cls.data_layer["class"]
+            ):
+                raise Exception(f"You must provide a data layer class inherited from BaseDataLayer in {cls.__name__}")
+
+            data_layer_cls = cls.data_layer.get("class", SqlalchemyDataLayer)
+            data_layer_kwargs = cls.data_layer
+            cls._data_layer = data_layer_cls(data_layer_kwargs)
+
+        if check_headers not in cls.decorators:
+            decorators = [check_headers,]
+            decorators.extend(cls.decorators)
+            cls.decorators = decorators
+
+        if not hasattr(cls, "plugins"):
+            cls.plugins = []
 
     @check_method_requirements
     def get(self, *args, **kwargs):
