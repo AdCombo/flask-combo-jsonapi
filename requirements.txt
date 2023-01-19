@@ -1,5 +1,5 @@
 simplejson
-Flask>=2.0,<2.1
+Flask>=2
 marshmallow>=3.16
 marshmallow_jsonapi==0.24.0
 sqlalchemy>=1.4,<2
