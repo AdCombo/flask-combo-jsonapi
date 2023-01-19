@@ -45,6 +45,9 @@ class Node(object):
         self.resource = resource
         self.schema = schema
 
+    def custom_sql_filter(self, marshmallow_field, operator):
+        return getattr(marshmallow_field, f'_{operator}_sql_filter_', None)
+
     def create_filter(self, marshmallow_field, model_column, operator, value):
         """
         Create sqlalchemy filter
@@ -64,12 +67,9 @@ class Node(object):
         * value - filtering value
         * operator - your operator, for example: "eq", "in", "ilike_str_array", ...
         """
-        try:
-            f = getattr(marshmallow_field, f'_{operator}_sql_filter_')
-        except AttributeError:
-            pass
-        else:
-            return f(
+        custom_sql_filter = self.custom_sql_filter(marshmallow_field, operator)
+        if custom_sql_filter:
+            return custom_sql_filter(
                 marshmallow_field=marshmallow_field,
                 model_column=model_column,
                 value=value,
@@ -109,7 +109,7 @@ class Node(object):
                 return self._relationship_filtering(value)
 
             marshmallow_field = self.schema._declared_fields[self.name]
-            if isinstance(marshmallow_field, Relationship):
+            if isinstance(marshmallow_field, Relationship) and not self.custom_sql_filter:
                 value = {
                     'name': marshmallow_field.id_field,
                     'op': self.filter_['op'],
