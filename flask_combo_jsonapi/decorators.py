@@ -73,8 +73,12 @@ def jsonapi_exception_formatter(func):
         try:
             return func(*args, **kwargs)
         except JsonApiException as e:
+            try:
+                status = int(e.status)
+            except:
+                status = e.status
             return make_response(jsonify(jsonapi_errors([e.to_dict()])),
-                                 e.status,
+                                 status,
                                  headers)
         except Exception as e:
             api_ex = format_http_exception(e)
