@@ -73,8 +73,14 @@ def jsonapi_exception_formatter(func):
         try:
             return func(*args, **kwargs)
         except JsonApiException as e:
+            # If status is just a numeric code, convert it to an int so that
+            # flask expands it to a valid HTTP status line in the response.
+            try:
+                status = int(e.status)
+            except ValueError:
+                status = e.status
             return make_response(jsonify(jsonapi_errors([e.to_dict()])),
-                                 e.status,
+                                 status,
                                  headers)
         except Exception as e:
             api_ex = format_http_exception(e)
